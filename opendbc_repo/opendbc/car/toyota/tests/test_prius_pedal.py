@@ -10,23 +10,23 @@ from opendbc.car.toyota.values import CAR, ToyotaFlags, ToyotaSafetyFlags
 PEDAL_DBC = 'toyota_prius_pedal_pt_generated'
 
 
-def prius_params(pedal=True, sdsu=True, alpha=True, candidate=CAR.TOYOTA_PRIUS):
+def prius_params(pedal=True, sdsu=True, alpha=False, candidate=CAR.TOYOTA_PRIUS, is_release=False):
   fingerprint = {0: {}, 1: {}, 2: {}}
   if pedal:
     fingerprint[0][0x201] = 6
   if sdsu:
     fingerprint[0][0x2FF] = 8
-  return CarInterface.get_params(candidate, fingerprint, [], alpha, False, False)
+  return CarInterface.get_params(candidate, fingerprint, [], alpha, is_release, False)
 
 
 class TestPriusPedal(unittest.TestCase):
-  def test_configuration_requires_both_devices_and_opt_in(self):
-    for pedal, sdsu, alpha in itertools.product((False, True), repeat=3):
-      with self.subTest(pedal=pedal, sdsu=sdsu, alpha=alpha):
-        cp = prius_params(pedal, sdsu, alpha)
-        enabled = pedal and sdsu and alpha
+  def test_configuration_auto_detects_both_devices_without_alpha_opt_in(self):
+    for pedal, sdsu, alpha, is_release in itertools.product((False, True), repeat=4):
+      with self.subTest(pedal=pedal, sdsu=sdsu, alpha=alpha, is_release=is_release):
+        cp = prius_params(pedal, sdsu, alpha, is_release=is_release)
+        enabled = pedal and sdsu
         self.assertEqual(cp.openpilotLongitudinalControl, enabled)
-        self.assertEqual(cp.alphaLongitudinalAvailable, pedal and sdsu)
+        self.assertFalse(cp.alphaLongitudinalAvailable)
         self.assertEqual(bool(cp.flags & ToyotaFlags.PRIUS_PEDAL), enabled)
         self.assertEqual(bool(cp.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.PRIUS_PEDAL), enabled)
         self.assertEqual(bool(cp.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.STOCK_LONGITUDINAL), not enabled)
@@ -107,11 +107,12 @@ class TestPriusPedal(unittest.TestCase):
         self.assertFalse(any(addr == 0x200 for addr, _, _ in sends))
 
   def test_controller_no_pedal_messages_without_feature(self):
-    cp = prius_params(alpha=False)
-    ci = CarInterface(cp)
-    ci.CS.out = structs.CarState().as_reader()
-    _, sends = ci.CC.update(structs.CarControl().as_reader(), ci.CS, 0)
-    self.assertFalse(any(addr == 0x200 for addr, _, _ in sends))
+    for pedal, sdsu in ((False, False), (False, True), (True, False)):
+      with self.subTest(pedal=pedal, sdsu=sdsu):
+        ci = CarInterface(prius_params(pedal=pedal, sdsu=sdsu))
+        ci.CS.out = structs.CarState().as_reader()
+        _, sends = ci.CC.update(structs.CarControl().as_reader(), ci.CS, 0)
+        self.assertFalse(any(addr == 0x200 for addr, _, _ in sends))
 
   def test_cancel_sends_inactive_pedal_even_if_long_active(self):
     ci = CarInterface(prius_params())

@@ -24,12 +24,14 @@ The production FrogPilot reference is [`8955eaae9574c2a9723f401bdbaf120bf021d08a
 
 ## Implemented behavior
 
-The feature is **off by default**. It is offered only when the existing car identification resolves to `CAR.TOYOTA_PRIUS` and both expected hardware messages are present on bus 0:
+The feature is **selected automatically from detected hardware**, following FrogPilot's Prius/Pedal/Smart DSU activation logic. It is selected only when the existing car identification resolves to `CAR.TOYOTA_PRIUS` and both expected hardware messages are present on bus 0:
 
 - comma Pedal sensor: **`0x201`, 6 bytes**.
 - Smart DSU: **`0x2FF`, 8 bytes**.
 
-It requires the existing explicit **alpha longitudinal-control opt-in**. The interface then enables longitudinal control and passes a dedicated Prius/Pedal safety flag. A stock DSU, disconnected DSU, pedal alone, wrong bus, wrong packet length, Prius V, TSS2 Prius, or another Toyota does not activate this path.
+The interface enables longitudinal control and passes a dedicated Prius/Pedal safety flag as soon as that combination is detected. **No alpha longitudinal-control opt-in is required.** The Prius path does not advertise `alphaLongitudinalAvailable`, so the old alpha toggle is not offered for this configuration. The automatic-selection reference is FrogPilot production [`9985af62b02fce21cbdd2941ebb55a598a84fffa`](https://github.com/FrogAi/FrogPilot/blob/9985af62b02fce21cbdd2941ebb55a598a84fffa/selfdrive/car/toyota/interface.py). This port retains its narrower requirement for both correctly sized device messages. A stock DSU, disconnected DSU, pedal alone, wrong bus, wrong packet length, Prius V, TSS2 Prius, or another Toyota does not activate this path.
+
+Hardware selection is separate from engagement and actuation. Cruise must still be engaged, longitudinal control must be active, and all controller and firmware checks below must pass before a nonzero Pedal command is permitted. Other Toyota configurations retain their existing alpha-longitudinal behavior.
 
 FrogPilot treats this Prius as a stop-and-go car. This port uses its fixed **0.12 normalized pedal launch assist**, sent at **50 Hz**, only while longitudinal control is active, the vehicle is stopped, requested acceleration is positive and finite, the gear is Drive, CAN and device state are healthy, and neither driver pedal nor cancel is active. It uses FrogPilot's Prius/Pedal standstill-request behavior. Acceleration and braking otherwise continue through Toyota's existing ACC interface and its limits.
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## Automatic Prius Pedal activation — 7 November 2026
+
+- Follow FrogPilot's automatic hardware-based selection for the TSS-P Prius with a physical comma Pedal and Smart DSU. Remove the extra alpha longitudinal opt-in introduced by the initial port.
+- Require both hardware messages on bus 0 with their expected lengths. Missing devices, unsupported platforms, faults, stale data and driver overrides retain their existing restrictions.
+- Keep the alpha longitudinal toggle unavailable for this automatically supported Prius configuration; other Toyota alpha modes retain their existing behavior.
+- Exercise automatic selection with alpha off/on and release status off/on, and verify that missing hardware prevents Pedal messages.
+- Update the front page and owner/developer guides to explain automatic selection, engagement and the remaining physical-vehicle validation boundary.
+
 ## Matching firmware package — 6 November 2026
 
 - Bundle the STM32H7 RELEASE-safety application and its matching upstream development bootstub for the custom public-debug-key signature.

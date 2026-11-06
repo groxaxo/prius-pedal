@@ -31,7 +31,7 @@ If you own a **2016 Prius with Toyota Safety Sense P**, start here. Model year a
 | **Device** | **comma 3X**, using the `release-tizi` software base and AGNOS 19.9 |
 | **Pedal** | A physically fitted **comma Pedal / gas interceptor** |
 | **DSU** | A fitted **Smart DSU (SDSU)** |
-| **Activation** | Off by default; both devices must be detected and alpha longitudinal control explicitly enabled |
+| **Activation** | Automatically selected when the supported Prius, Pedal and Smart DSU are detected; no alpha toggle required |
 
 This path is limited to the TSS-P `TOYOTA_PRIUS` platform. Prius v, later TSS2 Prius models, cars without TSS-P, and stock/disconnected DSU configurations do not activate it. The platform also groups some later Prius/Prime years; this project's owner documentation and hardware-validation target are the **2016 Prius**.
 

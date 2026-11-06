@@ -4,7 +4,7 @@
 
 Prius Pedal Lab is a development project for a **2016 Toyota Prius with Toyota Safety Sense P, a comma 3X, a physical comma Pedal, and a Smart DSU**. Its specific addition is bounded Pedal assist when moving off from standstill, adapted from FrogPilot.
 
-**The code and matching test firmware pair are available. Hardware and in-car validation are still pending.** There is no vehicle-ready installer published for this candidate.
+**The code and matching test firmware pair are available. In-car validation is still pending.** The initial custom build passed installation and offroad reboot checks on the target comma 3X on 6 November 2026. Those checks establish boot/signature compatibility, not vehicle behavior. There is no vehicle-qualified installer published for this candidate.
 
 ## Is your Prius the right platform?
 
@@ -45,9 +45,11 @@ The **0.12 normalized command** is a protocol/control value, not a claim about e
 
 The Prius/Pedal standstill-request behavior and SDSU follow-distance button input are also included. This port retains the existing steering limits and driver monitoring.
 
-## Why the feature starts disabled
+## How activation works
 
-Detection and explicit opt-in are both required. The interface offers this path only after identifying the TSS-P Prius platform and seeing both expected hardware messages on bus 0. Alpha longitudinal control must then be explicitly enabled.
+The interface automatically selects this path after identifying the TSS-P Prius platform and seeing both expected hardware messages on bus 0. This follows FrogPilot's hardware-based selection for the Prius/Pedal/Smart DSU combination. No separate Pedal switch or alpha longitudinal opt-in is required.
+
+Selecting the path does not engage cruise or request acceleration. Pedal output still requires normal engagement, active longitudinal control, an eligible stationary start, and healthy device data. The driver pedal/brake and cancel overrides remain in force. If either required device is missing, this Pedal path stays disabled.
 
 <details>
 <summary>Hardware-message details for developers and diagnostics</summary>
@@ -71,7 +73,7 @@ Message presence is a detection condition, not proof of correct wiring, device f
 | Toyota/CAN regression tests | Passed |
 | Full safety suite and line coverage | Passed; workflow enforces 100% safety line coverage |
 | STM32H7 firmware build | Passed; matching application, development bootstub and source/hash manifest bundled in `main` |
-| Firmware / bootstub signature compatibility on the target device | Required for each installation; verify on the selected device |
+| Firmware / bootstub signature compatibility on the target device | Initial custom pair passed offroad installation/reboot checks on 6 November 2026; verify each updated pair on the selected device |
 | Recorded vehicle-CAN replay | Pending |
 | Physical harness, Pedal calibration, and SDSU/AEB behavior | Pending |
 | Stationary hardware and driver-override acceptance | Pending |
