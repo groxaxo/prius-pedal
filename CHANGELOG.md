@@ -1,5 +1,11 @@
 # Changelog
 
+## Prius home-screen banner — 7 November 2026
+
+- Replace the comma 3X home-screen subscription promotion with the owner's supplied Prius image.
+- Replace the paired-device Firehose promotion with the wide image panel, keeping the Chill/Experimental mode control, pairing flow and offroad alerts available.
+- Fit the image without cropping or distortion. Upload preferences, account state, vehicle controls and matching firmware are unaffected by this display change.
+
 ## Automatic Prius Pedal activation — 7 November 2026
 
 - Follow FrogPilot's automatic hardware-based selection for the TSS-P Prius with a physical comma Pedal and Smart DSU. Remove the extra alpha longitudinal opt-in introduced by the initial port.

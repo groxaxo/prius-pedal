@@ -3,9 +3,10 @@ import pyray as rl
 from collections.abc import Callable
 from enum import IntEnum
 from openpilot.common.params import Params
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
 from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButton
-from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
+from openpilot.selfdrive.ui.widgets.prius_banner import PriusBannerWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment
@@ -55,7 +56,7 @@ class HomeLayout(Widget):
     self.update_notif_rect = rl.Rectangle(0, 0, 200, HEADER_HEIGHT - 10)
     self.alert_notif_rect = rl.Rectangle(0, 0, 220, HEADER_HEIGHT - 10)
 
-    self._prime_widget = PrimeWidget()
+    self._prius_banner = PriusBannerWidget()
     self._setup_widget = SetupWidget()
 
     self._exp_mode_button = ExperimentalModeButton()
@@ -181,8 +182,16 @@ class HomeLayout(Widget):
     gui_label(version_rect, self._version_text, 48, rl.WHITE, alignment=TextAlignment.RIGHT)
 
   def _render_home_content(self):
-    self._render_left_column()
-    self._render_right_column()
+    if ui_state.prime_state.is_paired():
+      mode_height = 125
+      mode_rect = rl.Rectangle(self.content_rect.x, self.content_rect.y, self.content_rect.width, mode_height)
+      self._exp_mode_button.render(mode_rect)
+      banner_rect = rl.Rectangle(self.content_rect.x, self.content_rect.y + mode_height + SPACING,
+                                 self.content_rect.width, self.content_rect.height - mode_height - SPACING)
+      self._prius_banner.render(banner_rect)
+    else:
+      self._render_left_column()
+      self._render_right_column()
 
   def _render_update_view(self):
     self.update_alert.render(self.content_rect)
@@ -191,7 +200,7 @@ class HomeLayout(Widget):
     self.offroad_alert.render(self.content_rect)
 
   def _render_left_column(self):
-    self._prime_widget.render(self.left_column_rect)
+    self._prius_banner.render(self.left_column_rect)
 
   def _render_right_column(self):
     exp_height = 125
