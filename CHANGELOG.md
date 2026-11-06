@@ -1,5 +1,13 @@
 # Changelog
 
+## Matching firmware package — 6 November 2026
+
+- Bundle the STM32H7 RELEASE-safety application and its matching upstream development bootstub for the custom public-debug-key signature.
+- Record firmware source revision, compiler, hashes and compatible control/safety/build-input digest.
+- Verify bundled hashes, application signature/version and ARM vectors in CI; reject stale firmware when compatible source inputs change.
+- Build both images in isolation with `--with-development-bootstub`. Builds and CI do not flash the device.
+- This remains a development candidate; device-specific boot/signature checks and in-car acceptance are separate requirements.
+
 ## Development candidate — 6 November 2026
 
 ### Added

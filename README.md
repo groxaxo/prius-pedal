@@ -19,7 +19,7 @@ comma 3X · comma Pedal · Smart DSU
 </div>
 
 > [!IMPORTANT]
-> **Development candidate — hardware validation is still pending.** The software tests and firmware build pass, but this project has not been qualified in the car. The inherited prebuilt firmware does not contain the new Pedal safety mode. A matching firmware build and bootstub/signature checks are required before stationary hardware validation; installing this branch alone is incomplete.
+> **Development candidate — hardware validation is still pending.** The software tests and firmware build pass, but this project has not been qualified in the car. The branch bundles a matching panda application and development bootstub. Back up the device and verify the firmware pair and its signing configuration before controlled installation. Bundled firmware and a successful boot do not establish in-car acceptance.
 
 ## Made for this Prius setup
 

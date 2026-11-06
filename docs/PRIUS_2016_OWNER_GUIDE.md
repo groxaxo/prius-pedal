@@ -4,7 +4,7 @@
 
 Prius Pedal Lab is a development project for a **2016 Toyota Prius with Toyota Safety Sense P, a comma 3X, a physical comma Pedal, and a Smart DSU**. Its specific addition is bounded Pedal assist when moving off from standstill, adapted from FrogPilot.
 
-**The code and test firmware build are available. Hardware and in-car validation are still pending.** There is no vehicle-ready installer published for this candidate.
+**The code and matching test firmware pair are available. Hardware and in-car validation are still pending.** There is no vehicle-ready installer published for this candidate.
 
 ## Is your Prius the right platform?
 
@@ -31,7 +31,7 @@ The software must identify the vehicle as **`CAR.TOYOTA_PRIUS`**. The existing f
 | **Smart DSU / SDSU** | Provides the DSU interface used by this longitudinal-control path |
 | **Matching panda safety firmware** | Enforces the new Pedal mode independently from the controller |
 
-A Pedal does not replace the DSU's braking interface. Both devices are required. The firmware artifact built by this repository is a bench artifact signed with the upstream public debug test key; an official release bootstub may reject it.
+A Pedal does not replace the DSU's braking interface. Both devices are required. The bundled main application retains release safety checks and is signed with the upstream public debug test key. Its matching development bootstub accepts official release and public debug keys. This is a custom signing configuration; an unchanged official release bootstub may reject the custom application.
 
 The software base is **openpilot 0.11.2** at official commit `f7db927c728bab57bb1263e05465766a8f28fc9d`, with **AGNOS 19.9**. The fork's branch name does not make its custom firmware an official comma release.
 
@@ -70,8 +70,8 @@ Message presence is a detection condition, not proof of correct wiring, device f
 | Prius/Pedal source port | Implemented and covered by integration tests |
 | Toyota/CAN regression tests | Passed |
 | Full safety suite and line coverage | Passed; workflow enforces 100% safety line coverage |
-| STM32H7 firmware build | Passed; bench artifact and source/hash manifest available in Actions |
-| Firmware / bootstub signature compatibility on the target device | Pending |
+| STM32H7 firmware build | Passed; matching application, development bootstub and source/hash manifest bundled in `main` |
+| Firmware / bootstub signature compatibility on the target device | Required for each installation; verify on the selected device |
 | Recorded vehicle-CAN replay | Pending |
 | Physical harness, Pedal calibration, and SDSU/AEB behavior | Pending |
 | Stationary hardware and driver-override acceptance | Pending |
@@ -79,7 +79,7 @@ Message presence is a detection condition, not proof of correct wiring, device f
 
 [Latest validation runs](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml) · [Detailed software evidence and build commands](PRIUS_PEDAL.md#validation-and-build)
 
-The inherited prebuilt panda binaries do **not** implement the new safety mode. Installing only the Python changes is incomplete. Matching firmware, signature compatibility, recorded-CAN replay, and stationary hardware checks remain necessary before vehicle use. Repository merges do not flash or install anything on the comma device.
+The bundled panda application implements the new safety mode, and the development bootstub accepts its custom signature. The repository checks both images against their recorded source inputs and hashes. A device backup, controlled deployment, on-device signature/boot checks, recorded-CAN replay, and stationary hardware checks remain necessary before vehicle use. Repository merges do not flash or install anything on the comma device.
 
 ## If your setup is not detected
 
