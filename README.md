@@ -58,6 +58,7 @@ The implementation also carries over the Prius/Pedal standstill-request behavior
 | See exactly what changed and where the code lives | [Implementation and FrogPilot source map](docs/PRIUS_PEDAL.md) |
 | Reproduce tests or build the bench firmware artifact | [Validation and build instructions](docs/PRIUS_PEDAL.md#validation-and-build) |
 | Keep an existing Mac SSH key through GitHub-key refreshes | [Persistent SSH setup and recovery](docs/SSH_ACCESS.md) |
+| Review the completed comma 3X startup, banner and SSH checks | [Offroad device verification record](docs/DEVICE_VERIFICATION.md) |
 | See what has been added to the fork | [Changelog](CHANGELOG.md) |
 | Read the original project's setup and data-policy documentation | [Upstream README at the pinned release](https://github.com/commaai/openpilot/blob/f7db927c728bab57bb1263e05465766a8f28fc9d/README.md) |
 
@@ -71,6 +72,7 @@ The automated workflow runs Toyota integration tests, CAN regression tests, the 
 | **CAN parser / packer** | 49 tests passed |
 | **Safety line coverage** | 100%; all 190 functions covered locally |
 | **Panda firmware** | STM32H7 build passed locally and on GitHub Actions |
+| **Physical comma 3X startup** | Offroad reboot, Prius banner, matching firmware and persistent SSH verified on 7 November 2026; [record and limits](docs/DEVICE_VERIFICATION.md) |
 | **In-car acceptance** | **Pending** — software evidence does not establish physical vehicle behavior |
 
 **[View the latest validation runs →](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml)**

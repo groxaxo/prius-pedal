@@ -4,7 +4,7 @@
 
 Prius Pedal Lab is a development project for a **2016 Toyota Prius with Toyota Safety Sense P, a comma 3X, a physical comma Pedal, and a Smart DSU**. Its specific addition is bounded Pedal assist when moving off from standstill, adapted from FrogPilot.
 
-**The code and matching test firmware pair are available. In-car validation is still pending.** The initial custom build passed installation and offroad reboot checks on the target comma 3X on 6 November 2026. Those checks establish boot/signature compatibility, not vehicle behavior. There is no vehicle-qualified installer published for this candidate.
+**The code and matching test firmware pair are available. In-car validation is still pending.** The installed candidate, Prius home-screen banner and existing owner SSH access passed [offroad verification on 7 November 2026](DEVICE_VERIFICATION.md). The running firmware signature matched the bundled image, and SSH survived key refresh and reboot.
 
 ## Is your Prius the right platform?
 
@@ -73,7 +73,8 @@ Message presence is a detection condition, not proof of correct wiring, device f
 | Toyota/CAN regression tests | Passed |
 | Full safety suite and line coverage | Passed; workflow enforces 100% safety line coverage |
 | STM32H7 firmware build | Passed; matching application, development bootstub and source/hash manifest bundled in `main` |
-| Firmware / bootstub signature compatibility on the target device | Initial custom pair passed offroad installation/reboot checks on 6 November 2026; verify each updated pair on the selected device |
+| Firmware startup on the target device | Offroad reboot checks passed on 7 November 2026 with the matching running-application signature; verify each updated pair on the selected device |
+| Home banner and durable owner SSH | Physical banner confirmed; fresh login passed after GitHub-key refresh and reboot; [verification record](DEVICE_VERIFICATION.md) |
 | Recorded vehicle-CAN replay | Pending |
 | Physical harness, Pedal calibration, and SDSU/AEB behavior | Pending |
 | Stationary hardware and driver-override acceptance | Pending |
@@ -91,6 +92,7 @@ For a useful issue report, include the vehicle's market/trim and TSS-P equipment
 
 ## Where to go next
 
+- [Completed offroad device checks and remaining acceptance work](DEVICE_VERIFICATION.md)
 - [Keep existing Mac SSH access through GitHub-key refreshes](SSH_ACCESS.md)
 - [Implementation, exact behavior, and FrogPilot source map](PRIUS_PEDAL.md)
 - [Test and firmware build instructions](PRIUS_PEDAL.md#validation-and-build)

@@ -6,6 +6,8 @@ Use an existing owner-managed Mac SSH identity and register its **public key as 
 
 This uses the existing comma SSH-key workflow. The fork's [`SshKeyFetcher`](../openpilot/selfdrive/ui/widgets/ssh_key.py) downloads `https://github.com/<username>.keys` and replaces the saved `GithubSshKeys` parameter. A key added only to the comma's cached list survives a reboot, but a later GitHub refresh replaces that list. Registering the existing public key on GitHub makes it part of every successful refresh.
 
+This procedure passed a real clear-and-import refresh and fresh login on the target comma 3X. A subsequent offroad reboot retained access. See the [7 November 2026 verification record](DEVICE_VERIFICATION.md) for the tested versions and scope.
+
 ## Register the existing public key
 
 For an existing identity at `~/.ssh/id_ed25519`, inspect its public fingerprint:

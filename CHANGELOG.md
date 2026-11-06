@@ -1,5 +1,12 @@
 # Changelog
 
+## Offroad verification and durable SSH record — 7 November 2026
+
+- Record the completed comma 3X reboot, physical Prius banner confirmation, matching running-firmware signature, and stable offroad service/MCU observations.
+- Document the existing Mac public-key registration that survives the normal GitHub-key refresh, with fresh login and reboot checks, recovery instructions and deliberate revocation.
+- Record preserved automatic-update and metered-network preferences, with Firehose inactive after reboot.
+- Link the verification record from the front page and owner guide, while retaining the pending vehicle-hardware and driving-acceptance status.
+
 ## Prius home-screen banner — 7 November 2026
 
 - Replace the comma 3X home-screen subscription promotion with the owner's supplied Prius image.
