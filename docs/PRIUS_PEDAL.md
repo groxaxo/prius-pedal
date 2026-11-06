@@ -2,7 +2,9 @@
 
 This is a development candidate for the TSS-P Toyota Prius platform with a physical comma Pedal and Smart DSU. It is based on the exact official `release-tizi` revision installed on the target comma 3X: **openpilot 0.11.2, `f7db927c728bab57bb1263e05465766a8f28fc9d`**. Its AGNOS requirement remains **19.9**.
 
-`release-tizi` preserves that official baseline. `prius-pedal-candidate` contains the changes. The project uses its own name because it modifies the safety model; see the upstream [fork requirements](SAFETY.md#forks-of-openpilot).
+`release-tizi` is this fork's integrated branch and contains the Pedal changes. `prius-pedal-candidate` remains the development branch. The frozen `upstream-release-tizi-0.11.2` branch preserves the exact unchanged official baseline. The fork's `release-tizi` is separate from comma's official branch of the same name. The project uses its own name because it modifies the safety model; see the upstream [fork requirements](SAFETY.md#forks-of-openpilot).
+
+For vehicle compatibility, hardware requirements, and current readiness, start with the [2016 Prius owner guide](PRIUS_2016_OWNER_GUIDE.md). The [changelog](../CHANGELOG.md) records the port and branch integration.
 
 ## What FrogPilot uses for a 2016 Prius
 
@@ -59,7 +61,7 @@ The modified STM32H7 firmware also compiled with Arm GNU Toolchain 14.3.rel1 and
 python tools/prius_pedal/build_firmware.py --output-dir /tmp/prius-pedal-firmware
 ```
 
-The GitHub Actions workflow repeats tests, coverage and the firmware build and retains a test artifact with its source revision and SHA-256 hashes.
+The [GitHub Actions workflow](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml) repeats tests, coverage and the firmware build for pushes and pull requests targeting `release-tizi` and `prius-pedal-candidate`. Each successful run retains a bench artifact with its source revision and SHA-256 hashes for 14 days. The initial implementation passed in [run 42171078154](https://github.com/groxaxo/prius-pedal/actions/runs/42171078154); use the workflow page for the current revision's result.
 
 ## Delivery boundary
 
