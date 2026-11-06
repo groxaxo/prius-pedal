@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/prius-pedal/hero.svg" alt="Prius Pedal Lab — a development project for the 2016 Toyota Prius with Toyota Safety Sense P" width="1200">
+  <img src="docs/assets/prius-pedal/hero.png" alt="Prius Pedal Lab — a development project for the 2016 Toyota Prius with Toyota Safety Sense P" width="1200">
 </p>
 
 <div align="center">
