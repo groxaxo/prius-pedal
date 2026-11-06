@@ -56,6 +56,7 @@ class ToyotaSafetyFlags(IntFlag):
   STOCK_LONGITUDINAL = (2 << 8)
   LTA = (4 << 8)
   SECOC = (8 << 8)
+  PRIUS_PEDAL = (16 << 8)
 
 
 class ToyotaFlags(IntFlag):
@@ -74,6 +75,8 @@ class ToyotaFlags(IntFlag):
   # these cars can utilize 2.0 m/s^2
   RAISED_ACCEL_LIMIT = 1024
   SECOC = 2048
+  # Opt-in TSS-P Prius longitudinal control with both a comma Pedal and Smart DSU.
+  PRIUS_PEDAL = 4096
 
   # deprecated flags
   # these cars are speculated to allow stop and go when the DSU is unplugged

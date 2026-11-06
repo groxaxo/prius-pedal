@@ -60,9 +60,44 @@ static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
 static bool toyota_stock_longitudinal = false;
 static bool toyota_lta = false;
+static bool toyota_prius_pedal = false;
 static int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
+static uint8_t toyota_pedal_checksum(const CANPacket_t *msg) {
+  uint8_t crc = 0xFFU;
+  for (int i = 4; i >= 0; i--) {
+    crc ^= msg->data[i];
+    for (int bit = 0; bit < 8; bit++) {
+      crc = (uint8_t)((crc << 1) ^ (((crc & 0x80U) != 0U) ? 0xD5U : 0U));
+    }
+  }
+  return crc;
+}
+
+static uint8_t toyota_get_counter(const CANPacket_t *msg) {
+  return (msg->addr == 0x201U) ? (msg->data[4] & 0xFU) : 0U;
+}
+
+static bool toyota_prius_pedal_ready(void) {
+  int found = 0;
+  for (int i = 0; i < current_safety_config.rx_checks_len; i++) {
+    const RxCheck *check = &current_safety_config.rx_checks[i];
+    if ((check->msg[0].addr == 0x201) || (check->msg[0].addr == 0x2FF)) {
+      found++;
+      if (!check->status.msg_seen || !check->status.valid_checksum || !check->status.valid_quality_flag ||
+          (check->status.wrong_counters >= MAX_WRONG_COUNTERS) ||
+          (safety_get_ts_elapsed(microsecond_timer_get(), check->status.last_timestamp) > 250000U)) {
+        return false;
+      }
+    }
+  }
+  return found == 2;
+}
+
 static uint32_t toyota_compute_checksum(const CANPacket_t *msg) {
+  if (msg->addr == 0x201U) {
+    return toyota_pedal_checksum(msg);
+  }
   int len = GET_LEN(msg);
   uint8_t checksum = (uint8_t)(msg->addr) + (uint8_t)((unsigned int)(msg->addr) >> 8U) + (uint8_t)(len);
   for (int i = 0; i < (len - 1); i++) {
@@ -78,6 +113,12 @@ static uint32_t toyota_get_checksum(const CANPacket_t *msg) {
 
 static bool toyota_get_quality_flag_valid(const CANPacket_t *msg) {
   bool valid = false;
+  if (msg->addr == 0x201U) {
+    valid = (msg->data[4] >> 4) == 0U;  // GAS_SENSOR.STATE
+  }
+  if (msg->addr == 0x2FFU) {
+    valid = (msg->data[2] >> 4) == 0U;  // SDSU.STATE, including AEB takeover
+  }
   if (msg->addr == 0x260U) {
     valid = !GET_BIT(msg, 3U);  // STEER_TORQUE_SENSOR.STEER_ANGLE_INITIALIZING
   }
@@ -143,7 +184,14 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
     if (msg_matches(msg, 0x1D2U, 0U)) {
       bool cruise_engaged = GET_BIT(msg, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
       pcm_cruise_check(cruise_engaged);
-      gas_pressed = !GET_BIT(msg, 4U);  // PCM_CRUISE.GAS_RELEASED
+      if (!toyota_prius_pedal) {
+        gas_pressed = !GET_BIT(msg, 4U);  // PCM_CRUISE.GAS_RELEASED
+      }
+    }
+    if (toyota_prius_pedal && msg_matches(msg, 0x201U, 0U)) {
+      int track1 = (msg->data[0] << 8) | msg->data[1];
+      int track2 = (msg->data[2] << 8) | msg->data[3];
+      gas_pressed = ((track1 + track2) / 2) > 805;
     }
     if (!toyota_alt_brake && msg_matches(msg, 0x226U, 0U)) {
       brake_pressed = GET_BIT(msg, 37U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_nodsu_pt_generated.dbc)
@@ -211,6 +259,19 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
 
   bool tx = true;
 
+  if (msg_matches(msg, 0x200U, 0U)) {
+    int track1 = (msg->data[0] << 8) | msg->data[1];
+    int track2 = (msg->data[2] << 8) | msg->data[3];
+    bool enabled = GET_BIT(msg, 39U);
+    bool inactive = !enabled && (track1 == 0) && (track2 == 0);
+    // Only FrogPilot's fixed 0.12 Prius launch assist is supported. No generic
+    // throttle curve, moving-vehicle pedal actuation, or brake override.
+    bool active = enabled && (track1 == 666) && (track2 == 1140) &&
+                  get_longitudinal_allowed() && !brake_pressed && !vehicle_moving && toyota_prius_pedal_ready();
+    tx = toyota_prius_pedal && (inactive || active) && ((msg->data[4] & 0x70U) == 0U) &&
+         (msg->data[5] == toyota_pedal_checksum(msg));
+  }
+
   // Check if msg is sent on BUS 0
   // ACCEL: safety check on byte 1-2
   if (msg_matches(msg, 0x343U, 0U)) {
@@ -223,6 +284,9 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
       violation = desired_accel != TOYOTA_LONG_LIMITS.inactive_accel;
     }
     violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
+    if (toyota_prius_pedal && (desired_accel != 0) && !toyota_prius_pedal_ready()) {
+      violation = true;
+    }
 
     // only ACC messages that cancel are allowed when openpilot is not controlling longitudinal
     if (toyota_stock_longitudinal) {
@@ -381,6 +445,9 @@ static safety_config toyota_init(uint16_t param) {
   toyota_stock_longitudinal = GET_FLAG(param, TOYOTA_PARAM_STOCK_LONGITUDINAL);
   toyota_lta = GET_FLAG(param, TOYOTA_PARAM_LTA);
   toyota_dbc_eps_torque_factor = param & TOYOTA_EPS_FACTOR;
+  const uint32_t TOYOTA_PARAM_PRIUS_PEDAL = 16UL << TOYOTA_PARAM_OFFSET;
+  toyota_prius_pedal = GET_FLAG(param, TOYOTA_PARAM_PRIUS_PEDAL) && !toyota_stock_longitudinal &&
+                       !GET_FLAG(param, 8UL << TOYOTA_PARAM_OFFSET) && !toyota_lta && !toyota_alt_brake;
 
   safety_config ret;
   if (toyota_secoc) {
@@ -425,6 +492,20 @@ static safety_config toyota_init(uint16_t param) {
     }
   }
 
+  if (toyota_prius_pedal) {
+    static const CanMsg toyota_prius_pedal_tx_msgs[] = {
+      TOYOTA_COMMON_LONG_TX_MSGS
+      {0x200, 0, 6, .check_relay = false},
+    };
+    static RxCheck toyota_prius_pedal_rx_checks[] = {
+      TOYOTA_RX_CHECKS(false)
+      {.msg = {{0x201, 0, 6, 50U, .max_counter = 15U}, {0}, {0}}},
+      {.msg = {{0x2FF, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true}, {0}, {0}}},
+    };
+    SET_TX_MSGS(toyota_prius_pedal_tx_msgs, ret);
+    SET_RX_CHECKS(toyota_prius_pedal_rx_checks, ret);
+  }
+
   return ret;
 }
 
@@ -433,6 +514,7 @@ const safety_hooks toyota_hooks = {
   .rx = toyota_rx_hook,
   .tx = toyota_tx_hook,
   .get_checksum = toyota_get_checksum,
+  .get_counter = toyota_get_counter,
   .compute_checksum = toyota_compute_checksum,
   .get_quality_flag_valid = toyota_get_quality_flag_valid,
 };

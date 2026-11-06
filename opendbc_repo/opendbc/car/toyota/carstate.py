@@ -50,6 +50,8 @@ class CarState(CarStateBase):
     self.lkas_hud = {}
     self.gvc = 0.0
     self.secoc_synchronization = None
+    self.pedal_ready = False
+    self.pcm_acc_status = 0
 
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
@@ -75,6 +77,13 @@ class CarState(CarStateBase):
       can_gear = int(cp.vl["GEAR_PACKET_HYBRID"]["GEAR"])
     else:
       ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
+      if self.CP.flags & ToyotaFlags.PRIUS_PEDAL:
+        # Ignore PCM gas feedback from the interceptor's own output. Use both
+        # physical pedal tracks for the driver's override, as FrogPilot does.
+        pedal = cp.vl["GAS_SENSOR"]
+        ret.gasPressed = (pedal["INTERCEPTOR_GAS"] + pedal["INTERCEPTOR_GAS2"]) // 2 > 805
+        self.pedal_ready = cp.can_valid and pedal["STATE"] == 0 and cp.vl["SDSU"]["STATE"] == 0
+        ret.accFaulted = not self.pedal_ready
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
       if not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
@@ -137,7 +146,7 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_ALT"]["UI_SET_SPEED"]
     else:
-      ret.accFaulted = cp.vl["PCM_CRUISE_2"]["ACC_FAULTED"] != 0
+      ret.accFaulted = ret.accFaulted or cp.vl["PCM_CRUISE_2"]["ACC_FAULTED"] != 0
       ret.carFaultedNonCritical = cp.vl["PCM_CRUISE_SM"]["TEMP_ACC_FAULTED"] != 0
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
@@ -163,6 +172,7 @@ class CarState(CarStateBase):
         ret.accFaulted = ret.accFaulted or cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
+    self.pcm_acc_status = pcm_acc_status
     ret.cruiseState.standstill = pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
     ret.cruiseState.nonAdaptive = pcm_acc_status in (1, 2, 3, 4, 5, 6)
@@ -181,6 +191,10 @@ class CarState(CarStateBase):
       self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
 
     buttonEvents = []
+    if self.CP.flags & ToyotaFlags.PRIUS_PEDAL:
+      previous_distance_button = self.distance_button
+      self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
+      buttonEvents += create_button_events(self.distance_button, previous_distance_button, {1: ButtonType.gapAdjustCruise})
     if self.CP.flags & ToyotaFlags.TSS2:
       # lkas button is wired to the camera
       prev_lkas_button = self.lkas_button
@@ -203,11 +217,15 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parsers(CP):
+    pt_dbc = DBC[CP.carFingerprint][Bus.pt]
     pt_messages = [
       ("BLINKERS_STATE", float('nan')),
     ]
+    if CP.flags & ToyotaFlags.PRIUS_PEDAL:
+      pt_messages += [("GAS_SENSOR", 50), ("SDSU", 100)]
+      pt_dbc = 'toyota_prius_pedal_pt_generated'
 
     return {
-      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
+      Bus.pt: CANParser(pt_dbc, pt_messages, 0),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
     }

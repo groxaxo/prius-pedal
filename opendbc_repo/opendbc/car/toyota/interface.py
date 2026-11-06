@@ -105,6 +105,17 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = ((bool(ret.flags & ToyotaFlags.TSS2) and not (ret.flags & ToyotaFlags.RADAR_ACC)) or
                                         bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value))
 
+    # A Pedal does not replace the DSU's braking interface. Require both devices,
+    # on their expected bus and with the expected message lengths, and explicit opt-in.
+    prius_pedal_available = (candidate == CAR.TOYOTA_PRIUS and fingerprint[0].get(0x201) == 6 and
+                              fingerprint[0].get(0x2FF) == 8)
+    if prius_pedal_available:
+      ret.alphaLongitudinalAvailable = True
+      if alpha_long:
+        ret.flags |= ToyotaFlags.PRIUS_PEDAL.value
+        ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.PRIUS_PEDAL.value
+        ret.openpilotLongitudinalControl = True
+
     ret.autoResumeSng = ret.openpilotLongitudinalControl
 
     if not ret.openpilotLongitudinalControl:

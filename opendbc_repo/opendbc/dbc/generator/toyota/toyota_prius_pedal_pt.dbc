@@ -1,0 +1,5 @@
+CM_ "IMPORT _toyota_2017.dbc";
+CM_ "IMPORT _toyota_adas_standard.dbc";
+CM_ "IMPORT toyota_nodsu_pt.dbc";
+CM_ "IMPORT _community.dbc";
+CM_ "Used only by the opt-in TSS-P Prius comma Pedal and Smart DSU integration.";
