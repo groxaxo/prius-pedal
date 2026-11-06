@@ -10,7 +10,7 @@
 
 comma 3X · comma Pedal · Smart DSU
 
-[![Validation](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml/badge.svg?branch=release-tizi)](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml)
+[![Validation](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml/badge.svg?branch=main)](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml)
 [![Status: development candidate](https://img.shields.io/badge/status-development_candidate-e4ad55)](docs/PRIUS_2016_OWNER_GUIDE.md#current-status)
 [![License: MIT](https://img.shields.io/badge/license-MIT-58cfa3)](LICENSE)
 
@@ -80,11 +80,11 @@ Each successful run retains a bench firmware artifact and a manifest with its so
 
 | Reference | Purpose |
 | --- | --- |
-| **`release-tizi`** | Main branch of **this fork**, with the Prius Pedal changes merged in |
-| **`prius-pedal-candidate`** | Development branch for changes before merging |
-| **`upstream-release-tizi-0.11.2`** | Frozen baseline branch at the unchanged official release |
+| **`main`** | The single development and default branch, with the Prius Pedal changes and new banner integrated |
+| **`upstream-release-tizi-0.11.2`** | Frozen tag at the unchanged official release |
+| **`archive/dragonpilot-pre-build`** | Archive tag preserving the inherited DragonPilot branch; its older code is separate from the Prius Pedal implementation |
 
-The official base is **commaai/openpilot 0.11.2**, commit [`f7db927`](https://github.com/commaai/openpilot/commit/f7db927c728bab57bb1263e05465766a8f28fc9d). The fork's `release-tizi` branch contains custom changes and is separate from comma's official branch of the same name. Merging here does not install software on a comma device.
+The official base is **commaai/openpilot 0.11.2**, commit [`f7db927`](https://github.com/commaai/openpilot/commit/f7db927c728bab57bb1263e05465766a8f28fc9d), from comma's official `release-tizi` branch. This fork's `main` contains custom changes. Merging here does not install software on a comma device.
 
 GitHub places this repository in the existing openpilot fork network and displays `dragonpilot/dragonpilot` as its immediate parent. The delivered code starts directly from the pinned official commaai release above.
 
@@ -92,4 +92,4 @@ GitHub places this repository in the existing openpilot fork network and display
 
 This project builds on [commaai/openpilot](https://github.com/commaai/openpilot/tree/f7db927c728bab57bb1263e05465766a8f28fc9d) and adapts the Prius Pedal behavior from [FrogPilot](https://github.com/FrogAi/FrogPilot/tree/8955eaae9574c2a9723f401bdbaf120bf021d08a). Source references and attribution are recorded in the [implementation guide](docs/PRIUS_PEDAL.md#what-frogpilot-uses-for-a-2016-prius).
 
-The original MIT license and copyright notices are retained. Some components have their own licenses. See [LICENSE](LICENSE), the [upstream safety requirements](docs/SAFETY.md), and the [original README on the frozen baseline](https://github.com/groxaxo/prius-pedal/blob/upstream-release-tizi-0.11.2/README.md).
+The original MIT license and copyright notices are retained. Some components have their own licenses. See [LICENSE](LICENSE), the [upstream safety requirements](docs/SAFETY.md), and the [original README at the frozen baseline tag](https://github.com/groxaxo/prius-pedal/blob/upstream-release-tizi-0.11.2/README.md).

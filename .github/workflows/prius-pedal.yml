@@ -2,9 +2,9 @@ name: Prius Pedal validation
 
 on:
   push:
-    branches: [release-tizi, prius-pedal-candidate]
+    branches: [main]
   pull_request:
-    branches: [release-tizi, prius-pedal-candidate]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

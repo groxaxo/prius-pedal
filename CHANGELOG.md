@@ -13,10 +13,11 @@
 
 ### Branch integration
 
-- `release-tizi` is the integrated branch of this fork; `prius-pedal-candidate` remains the development branch.
-- `upstream-release-tizi-0.11.2` preserves the unchanged official baseline at `f7db927c728bab57bb1263e05465766a8f28fc9d`.
-- CI covers pushes and pull requests targeting both project branches.
-- The original upstream README is preserved on the frozen baseline branch; original licenses and copyright notices remain in place.
+- `main` is the single development and default branch, containing the integrated Prius Pedal work and the new neon Tokyo banner.
+- The `upstream-release-tizi-0.11.2` tag preserves the unchanged official baseline at `f7db927c728bab57bb1263e05465766a8f28fc9d`.
+- The `archive/dragonpilot-pre-build` tag preserves the separate inherited DragonPilot code at `94ad85cfda64773a960d048dc11cac02d4aa86a5`.
+- CI covers pushes and pull requests targeting `main`; the superseded branches have been retired.
+- The original upstream README is preserved at the frozen baseline tag; original licenses and copyright notices remain in place.
 
 ### Validation and delivery
 
