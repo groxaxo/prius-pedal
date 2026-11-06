@@ -1,3 +1,13 @@
+# Prius Pedal Lab
+
+An opt-in Toyota TSS-P Prius comma Pedal + Smart DSU development candidate, based on the official **openpilot 0.11.2 `release-tizi`** revision `f7db927c728bab57bb1263e05465766a8f28fc9d`.
+
+Read the [implementation, source map, validation results, and firmware requirements](docs/PRIUS_PEDAL.md) before using this branch. The candidate is off by default and has not been installed or vehicle-qualified. The stock `release-tizi` branch is preserved separately.
+
+The inherited prebuilt panda image does not contain the new safety mode. GitHub Actions builds a separate test artifact; this branch is not a turnkey vehicle installer.
+
+The upstream project documentation follows for reference.
+
 <div align="center" style="text-align: center;">
 
 <h1>openpilot</h1>

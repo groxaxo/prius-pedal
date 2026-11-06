@@ -1,0 +1,58 @@
+name: Prius Pedal validation
+
+on:
+  push:
+    branches: [prius-pedal-candidate]
+  pull_request:
+    branches: [prius-pedal-candidate]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            opendbc_repo
+            panda
+            tools/prius_pedal
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install Python test dependencies
+        run: python -m pip install -e 'opendbc_repo[testing]' scons
+      - name: Lint modified Python
+        run: >-
+          ruff check opendbc_repo/opendbc/can/dbc.py opendbc_repo/opendbc/car/toyota
+          opendbc_repo/opendbc/safety/tests/test_toyota_prius_pedal.py tools/prius_pedal/build_firmware.py
+      - name: Toyota integration and CAN regression tests
+        working-directory: opendbc_repo
+        run: |
+          python -m unittest opendbc.car.toyota.tests.test_toyota opendbc.car.toyota.tests.test_prius_pedal
+          python -m unittest discover -s opendbc/can/tests
+      - name: Full safety suite with undefined-behavior sanitizer
+        working-directory: opendbc_repo
+        run: python -m unittest discover -s opendbc/safety/tests
+      - name: Full safety line coverage
+        working-directory: opendbc_repo
+        run: |
+          SAFETY_COVERAGE=1 python -m unittest discover -s opendbc/safety/tests
+          gcovr -r opendbc/safety --exclude '.*/libsafety/.*' --fail-under-line 100 --txt-summary
+      - name: Install ARM build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
+      - name: Build isolated STM32H7 test firmware
+        run: python tools/prius_pedal/build_firmware.py --output-dir "${RUNNER_TEMP}/prius-pedal-firmware"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prius-pedal-test-firmware-${{ github.sha }}
+          path: ${{ runner.temp }}/prius-pedal-firmware
+          if-no-files-found: error
+          retention-days: 14

@@ -3,6 +3,31 @@ from opendbc.car.structs import CarParams
 SteerControlType = CarParams.SteerControlType
 
 
+def pedal_checksum(data):
+  # comma Pedal CRC-8, as used by FrogPilot's create_gas_interceptor_command.
+  crc = 0xFF
+  for value in reversed(data):
+    crc ^= value
+    for _ in range(8):
+      crc = ((crc << 1) ^ (0xD5 if crc & 0x80 else 0)) & 0xFF
+  return crc
+
+
+def toyota_pedal_checksum(address, sig, data):
+  return pedal_checksum(data[:-1])
+
+
+def create_prius_pedal_command(packer, active, counter):
+  # The TSS-P Prius is a stop-and-go car: use FrogPilot's 0.12 launch assist,
+  # not the speed-dependent throttle curve intended for non-stop-and-go Toyotas.
+  values = {"ENABLE": active, "COUNTER_PEDAL": counter & 0xF}
+  if active:
+    values.update(GAS_COMMAND=0.12 * 255., GAS_COMMAND2=0.12 * 255.)
+  # Unspecified command fields remain raw zero when inactive. Encoding physical
+  # zero through the DBC offsets would change the pedal's passthrough range.
+  return packer.make_can_msg("GAS_COMMAND", 0, values)
+
+
 def create_steer_command(packer, steer, steer_req):
   """Creates a CAN message for the Toyota Steer Command."""
 

@@ -74,6 +74,7 @@ class CarController(CarControllerBase):
     self.secoc_lta_message_counter = 0
     self.secoc_acc_message_counter = 0
     self.secoc_prev_reset_counter = 0
+    self.last_standstill = False
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -81,6 +82,14 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
+    prius_pedal = bool(self.CP.flags & ToyotaFlags.PRIUS_PEDAL)
+    long_active = CC.longActive
+    if prius_pedal:
+      long_active = (long_active and CC.enabled and CS.pedal_ready and CS.out.canValid and
+                     not CC.cruiseControl.cancel and
+                     not CS.out.accFaulted and not CS.out.vehicleSensorsInvalid and
+                     not CS.out.brakePressed and not CS.out.gasPressed and
+                     CS.out.gearShifter == structs.CarState.GearShifter.drive and math.isfinite(actuators.accel))
 
     if len(CC.orientationNED) == 3:
       self.pitch.update(CC.orientationNED[1])
@@ -171,12 +180,24 @@ class CarController(CarControllerBase):
     lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
     # *** gas and brake ***
+    if prius_pedal and self.frame % 2 == 0:
+      launch_assist = long_active and CS.out.standstill and abs(CS.out.vEgoRaw) < 1e-3 and actuators.accel > 0
+      can_sends.append(toyotacan.create_prius_pedal_command(self.packer, launch_assist, self.frame // 2))
+
+    if prius_pedal:
+      # Preserve FrogPilot's Prius/Pedal standstill request semantics.
+      if CS.out.standstill and not self.last_standstill:
+        self.standstill_req = True
+      if CS.pcm_acc_status != 8:
+        self.standstill_req = False
+      self.last_standstill = CS.out.standstill
+
     if self.CP.openpilotLongitudinalControl:
       # if user engages at a stop with foot on brake, PCM starts in a special cruise standstill mode. on resume press,
       # brakes can take a while to ramp up causing a lurch forward. prevent resume press until planner wants to move.
       # don't use CC.cruiseControl.resume since it is gated on CS.cruiseState.standstill which goes false for 3s after resume press
       # whitelist hybrids as they do not have this issue and can stay stopped after resume press
-      if not self.CP.flags & ToyotaFlags.HYBRID.value:
+      if not prius_pedal and not self.CP.flags & ToyotaFlags.HYBRID.value:
         should_resume = actuators.accel > 0
         if should_resume:
           self.standstill_req = False
@@ -194,8 +215,8 @@ class CarController(CarControllerBase):
             self.distance_button = 0
 
         # internal PCM gas command can get stuck unwinding from negative accel so we apply a generous rate limit
-        pcm_accel_cmd = actuators.accel
-        if CC.longActive:
+        pcm_accel_cmd = 0.0 if prius_pedal and not long_active else actuators.accel
+        if long_active:
           pcm_accel_cmd = rate_limit(pcm_accel_cmd, self.prev_accel, ACCEL_WINDDOWN_LIMIT, ACCEL_WINDUP_LIMIT)
         self.prev_accel = pcm_accel_cmd
 
@@ -219,7 +240,7 @@ class CarController(CarControllerBase):
         future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
         a_ego_future = a_ego_blended + j_ego * future_t
 
-        if CC.longActive:
+        if long_active:
           # constantly slowly unwind integral to recover from large temporary errors
           self.long_pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.long_pid.i))
 
@@ -242,7 +263,7 @@ class CarController(CarControllerBase):
         # Along with rate limiting positive jerk above, this greatly improves gas response time
         # Consider the net acceleration request that the PCM should be applying (pitch included)
         net_acceleration_request_min = min(actuators.accel + accel_due_to_pitch, net_acceleration_request)
-        if net_acceleration_request_min < 0.2 or stopping or not CC.longActive:
+        if net_acceleration_request_min < 0.2 or stopping or not long_active:
           self.permit_braking = True
         elif net_acceleration_request_min > 0.3:
           self.permit_braking = False

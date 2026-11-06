@@ -8,7 +8,7 @@ from opendbc import DBC_PATH, get_generated_dbcs
 
 # TODO: these should just be passed in along with the DBC file
 from opendbc.car.honda.hondacan import honda_checksum
-from opendbc.car.toyota.toyotacan import toyota_checksum
+from opendbc.car.toyota.toyotacan import toyota_checksum, toyota_pedal_checksum
 from opendbc.car.subaru.subarucan import subaru_checksum
 from opendbc.car.chrysler.chryslercan import chrysler_checksum, fca_giorgio_checksum
 from opendbc.car.hyundai.hyundaicanfd import hkg_can_fd_checksum
@@ -207,6 +207,14 @@ def ford_setup_signal(sig: Signal, dbc_name: str, line_num: int) -> None:
     sig.type = SignalType.COUNTER
 
 
+def toyota_setup_signal(sig: Signal, dbc_name: str, line_num: int) -> None:
+  if sig.name == "CHECKSUM_PEDAL":
+    sig.type = SignalType.TOYOTA_CHECKSUM
+    sig.calc_checksum = toyota_pedal_checksum
+  elif sig.name == "COUNTER_PEDAL":
+    sig.type = SignalType.COUNTER
+
+
 @dataclass
 class ChecksumState:
   checksum_type: int
@@ -220,7 +228,7 @@ def get_checksum_state(dbc_name: str) -> ChecksumState | None:
   if dbc_name.startswith(("honda_", "acura_")):
     return ChecksumState(SignalType.HONDA_CHECKSUM, honda_checksum)
   elif dbc_name.startswith(("toyota_", "lexus_")):
-    return ChecksumState(SignalType.TOYOTA_CHECKSUM, toyota_checksum)
+    return ChecksumState(SignalType.TOYOTA_CHECKSUM, toyota_checksum, toyota_setup_signal)
   elif dbc_name.startswith("hyundai_canfd_generated"):
     return ChecksumState(SignalType.HKG_CAN_FD_CHECKSUM, hkg_can_fd_checksum)
   elif dbc_name.startswith("vw_meb_2024"):
