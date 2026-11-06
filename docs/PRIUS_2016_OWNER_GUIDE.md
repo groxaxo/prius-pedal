@@ -91,6 +91,7 @@ For a useful issue report, include the vehicle's market/trim and TSS-P equipment
 
 ## Where to go next
 
+- [Keep existing Mac SSH access through GitHub-key refreshes](SSH_ACCESS.md)
 - [Implementation, exact behavior, and FrogPilot source map](PRIUS_PEDAL.md)
 - [Test and firmware build instructions](PRIUS_PEDAL.md#validation-and-build)
 - [Changes in this fork](../CHANGELOG.md)

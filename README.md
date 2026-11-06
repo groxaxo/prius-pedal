@@ -57,6 +57,7 @@ The implementation also carries over the Prius/Pedal standstill-request behavior
 | Understand whether your 2016 Prius has the required setup | [2016 Prius owner guide](docs/PRIUS_2016_OWNER_GUIDE.md) |
 | See exactly what changed and where the code lives | [Implementation and FrogPilot source map](docs/PRIUS_PEDAL.md) |
 | Reproduce tests or build the bench firmware artifact | [Validation and build instructions](docs/PRIUS_PEDAL.md#validation-and-build) |
+| Keep an existing Mac SSH key through GitHub-key refreshes | [Persistent SSH setup and recovery](docs/SSH_ACCESS.md) |
 | See what has been added to the fork | [Changelog](CHANGELOG.md) |
 | Read the original project's setup and data-policy documentation | [Upstream README at the pinned release](https://github.com/commaai/openpilot/blob/f7db927c728bab57bb1263e05465766a8f28fc9d/README.md) |
 
