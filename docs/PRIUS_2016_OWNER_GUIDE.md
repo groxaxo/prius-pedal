@@ -93,4 +93,3 @@ For a useful issue report, include the vehicle's market/trim and TSS-P equipment
 - [Test and firmware build instructions](PRIUS_PEDAL.md#validation-and-build)
 - [Changes in this fork](../CHANGELOG.md)
 - [Unchanged official baseline branch](https://github.com/groxaxo/prius-pedal/tree/upstream-release-tizi-0.11.2)
-

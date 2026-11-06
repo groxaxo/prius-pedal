@@ -92,4 +92,4 @@ GitHub places this repository in the existing openpilot fork network and display
 
 This project builds on [commaai/openpilot](https://github.com/commaai/openpilot/tree/f7db927c728bab57bb1263e05465766a8f28fc9d) and adapts the Prius Pedal behavior from [FrogPilot](https://github.com/FrogAi/FrogPilot/tree/8955eaae9574c2a9723f401bdbaf120bf021d08a). Source references and attribution are recorded in the [implementation guide](docs/PRIUS_PEDAL.md#what-frogpilot-uses-for-a-2016-prius).
 
-The original MIT license and copyright notices are retained. Some components have their own licenses. See [LICENSE](LICENSE), the [upstream safety requirements](docs/SAFETY.md), and the [preserved upstream README](https://github.com/groxaxo/prius-pedal/blob/release-tizi/docs/UPSTREAM_README.md).
+The original MIT license and copyright notices are retained. Some components have their own licenses. See [LICENSE](LICENSE), the [upstream safety requirements](docs/SAFETY.md), and the [original README on the frozen baseline](https://github.com/groxaxo/prius-pedal/blob/upstream-release-tizi-0.11.2/README.md).
