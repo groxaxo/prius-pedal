@@ -1,0 +1,11 @@
+CM_ "IMPORT _toyota_2017.dbc";
+CM_ "IMPORT _toyota_adas_standard.dbc";
+CM_ "IMPORT toyota_nodsu_pt.dbc";
+CM_ "IMPORT _community.dbc";
+CM_ "Four-byte Smart DSU status observed on the target Prius, overriding the legacy eight-byte definition.";
+
+BO_ 767 SDSU: 4 XXX
+ SG_ FD_BUTTON : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ STATE : 23|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 19|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 31|8@0+ (1,0) [0|255] "" XXX

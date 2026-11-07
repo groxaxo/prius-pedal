@@ -57,7 +57,7 @@ Selecting the path does not engage cruise or request acceleration. Pedal output 
 | Device | CAN address | Required length |
 | --- | --- | --- |
 | Pedal sensor | `0x201` | 6 bytes |
-| Smart DSU | `0x2FF` | 8 bytes |
+| Smart DSU | `0x2FF` | 4 or 8 bytes |
 
 Messages on another bus or with another length do not enable the feature. During operation, faults, invalid Pedal checksums/counters, or stale device data prevent nonzero actuation. The firmware requires both device streams to be valid and no more than 250 ms old.
 

@@ -75,6 +75,9 @@ static uint8_t toyota_pedal_checksum(const CANPacket_t *msg) {
 }
 
 static uint8_t toyota_get_counter(const CANPacket_t *msg) {
+  if ((msg->addr == 0x2FFU) && (GET_LEN(msg) == 4U)) {
+    return msg->data[2] & 0xFU;
+  }
   return (msg->addr == 0x201U) ? (msg->data[4] & 0xFU) : 0U;
 }
 
@@ -502,8 +505,17 @@ static safety_config toyota_init(uint16_t param) {
       {.msg = {{0x201, 0, 6, 50U, .max_counter = 15U}, {0}, {0}}},
       {.msg = {{0x2FF, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true}, {0}, {0}}},
     };
+    static RxCheck toyota_prius_pedal_sdsu4_rx_checks[] = {
+      TOYOTA_RX_CHECKS(false)
+      {.msg = {{0x201, 0, 6, 50U, .max_counter = 15U}, {0}, {0}}},
+      {.msg = {{0x2FF, 0, 4, 50U, .max_counter = 15U}, {0}, {0}}},
+    };
     SET_TX_MSGS(toyota_prius_pedal_tx_msgs, ret);
-    SET_RX_CHECKS(toyota_prius_pedal_rx_checks, ret);
+    if (GET_FLAG(param, 32UL << TOYOTA_PARAM_OFFSET)) {
+      SET_RX_CHECKS(toyota_prius_pedal_sdsu4_rx_checks, ret);
+    } else {
+      SET_RX_CHECKS(toyota_prius_pedal_rx_checks, ret);
+    }
   }
 
   return ret;

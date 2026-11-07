@@ -27,7 +27,7 @@ The production FrogPilot reference is [`8955eaae9574c2a9723f401bdbaf120bf021d08a
 The feature is **selected automatically from detected hardware**, following FrogPilot's Prius/Pedal/Smart DSU activation logic. It is selected only when the existing car identification resolves to `CAR.TOYOTA_PRIUS` and both expected hardware messages are present on bus 0:
 
 - comma Pedal sensor: **`0x201`, 6 bytes**.
-- Smart DSU: **`0x2FF`, 8 bytes**.
+- Smart DSU: **`0x2FF`, 4 or 8 bytes**. The target car sends the four-byte format at 50 Hz, with a rolling counter and Toyota checksum; the legacy eight-byte definition remains supported.
 
 The interface enables longitudinal control and passes a dedicated Prius/Pedal safety flag as soon as that combination is detected. **No alpha longitudinal-control opt-in is required.** The Prius path does not advertise `alphaLongitudinalAvailable`, so the old alpha toggle is not offered for this configuration. The automatic-selection reference is FrogPilot production [`9985af62b02fce21cbdd2941ebb55a598a84fffa`](https://github.com/FrogAi/FrogPilot/blob/9985af62b02fce21cbdd2941ebb55a598a84fffa/selfdrive/car/toyota/interface.py). This port retains its narrower requirement for both correctly sized device messages. A stock DSU, disconnected DSU, pedal alone, wrong bus, wrong packet length, Prius V, TSS2 Prius, or another Toyota does not activate this path.
 

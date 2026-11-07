@@ -109,9 +109,12 @@ class CarInterface(CarInterfaceBase):
     # A Pedal does not replace the DSU's braking interface: require both devices
     # on their expected bus and with the expected message lengths.
     prius_pedal_available = (candidate == CAR.TOYOTA_PRIUS and fingerprint[0].get(0x201) == 6 and
-                              fingerprint[0].get(0x2FF) == 8)
+                              fingerprint[0].get(0x2FF) in (4, 8))
     if prius_pedal_available:
       ret.flags |= ToyotaFlags.PRIUS_PEDAL.value
+      if fingerprint[0][0x2FF] == 4:
+        ret.flags |= ToyotaFlags.PRIUS_PEDAL_SDSU_4.value
+        ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4.value
       ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.PRIUS_PEDAL.value
       ret.openpilotLongitudinalControl = True
 

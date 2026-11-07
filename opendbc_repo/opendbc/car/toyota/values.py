@@ -57,6 +57,7 @@ class ToyotaSafetyFlags(IntFlag):
   LTA = (4 << 8)
   SECOC = (8 << 8)
   PRIUS_PEDAL = (16 << 8)
+  PRIUS_PEDAL_SDSU_4 = (32 << 8)
 
 
 class ToyotaFlags(IntFlag):
@@ -77,6 +78,8 @@ class ToyotaFlags(IntFlag):
   SECOC = 2048
   # Opt-in TSS-P Prius longitudinal control with both a comma Pedal and Smart DSU.
   PRIUS_PEDAL = 4096
+  # Four-byte, checksummed Smart DSU status (legacy eight-byte status is also supported).
+  PRIUS_PEDAL_SDSU_4 = 8192
 
   # deprecated flags
   # these cars are speculated to allow stop and go when the DSU is unplugged

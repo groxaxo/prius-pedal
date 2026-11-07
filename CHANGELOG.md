@@ -1,5 +1,12 @@
 # Changelog
 
+## Smart DSU compatibility fix — 7 November 2026
+
+- Recognize the target Prius's four-byte Smart DSU status at 50 Hz, while retaining the legacy eight-byte variant.
+- Select the corresponding CAN definition and firmware safety checks from the detected frame length. The four-byte path validates the Toyota checksum, rolling counter, device state and existing freshness limits.
+- Correct the hardware-detection fallback that left stock ACC active and made Experimental Mode unavailable despite the Pedal and Smart DSU being present.
+- Add regression cases using the observed four-byte payload, including malformed lengths, checksum failures and replayed counters. Vehicle engagement acceptance remains separate from software validation.
+
 ## Offroad verification and durable SSH record — 7 November 2026
 
 - Record the completed comma 3X reboot, physical Prius banner confirmation, matching running-firmware signature, and stable offroad service/MCU observations.

@@ -20,6 +20,33 @@ def prius_params(pedal=True, sdsu=True, alpha=False, candidate=CAR.TOYOTA_PRIUS,
 
 
 class TestPriusPedal(unittest.TestCase):
+  def test_live_four_byte_sdsu_selects_pedal_without_alpha(self):
+    cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: 4}, 1: {}, 2: {}}, [], False, False, False)
+    self.assertTrue(cp.openpilotLongitudinalControl)
+    self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL)
+    self.assertEqual(cp.minEnableSpeed, -1.)
+    self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL_SDSU_4)
+    ci = CarInterface(cp)
+    self.assertEqual(ci.can_parsers['pt'].dbc_name, 'toyota_prius_pedal_sdsu4_pt_generated')
+
+  def test_four_byte_sdsu_parser_checks_real_counter_and_checksum(self):
+    parser = CANParser('toyota_prius_pedal_sdsu4_pt_generated', [('SDSU', 50)], 0)
+    for i in range(32):
+      counter = i & 15
+      data = bytes([0, 0, counter, counter + 5])
+      self.assertIn(0x2FF, parser.update([[(i + 1) * 20_000_000, [(0x2FF, data, 0)]]]))
+      self.assertEqual(parser.vl['SDSU']['STATE'], 0)
+    self.assertTrue(parser.can_valid)
+    self.assertNotIn(0x2FF, parser.update([[660_000_000, [(0x2FF, bytes.fromhex('00000004'), 0)]]]))
+    for i in range(6):
+      parser.update([[(i + 34) * 20_000_000, [(0x2FF, bytes.fromhex('00000005'), 0)]]])
+    self.assertFalse(parser.can_valid)
+
+  def test_malformed_sdsu_lengths_do_not_select_pedal(self):
+    for length in (0, 1, 2, 3, 5, 6, 7):
+      cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: length}, 1: {}, 2: {}}, [], False, False, False)
+      self.assertFalse(cp.openpilotLongitudinalControl)
+
   def test_configuration_auto_detects_both_devices_without_alpha_opt_in(self):
     for pedal, sdsu, alpha, is_release in itertools.product((False, True), repeat=4):
       with self.subTest(pedal=pedal, sdsu=sdsu, alpha=alpha, is_release=is_release):

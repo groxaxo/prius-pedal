@@ -222,8 +222,9 @@ class CarState(CarStateBase):
       ("BLINKERS_STATE", float('nan')),
     ]
     if CP.flags & ToyotaFlags.PRIUS_PEDAL:
-      pt_messages += [("GAS_SENSOR", 50), ("SDSU", 100)]
-      pt_dbc = 'toyota_prius_pedal_pt_generated'
+      sdsu_four_byte = bool(CP.flags & ToyotaFlags.PRIUS_PEDAL_SDSU_4)
+      pt_messages += [("GAS_SENSOR", 50), ("SDSU", 50 if sdsu_four_byte else 100)]
+      pt_dbc = 'toyota_prius_pedal_sdsu4_pt_generated' if sdsu_four_byte else 'toyota_prius_pedal_pt_generated'
 
     return {
       Bus.pt: CANParser(pt_dbc, pt_messages, 0),
