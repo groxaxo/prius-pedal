@@ -21,6 +21,8 @@ comma 3X · comma Pedal · Smart DSU
 > [!IMPORTANT]
 > **Development candidate — hardware validation is still pending.** The software tests and firmware build pass, but this project has not been qualified in the car. The branch bundles a matching panda application and development bootstub. Back up the device and verify the firmware pair and its signing configuration before controlled installation. Bundled firmware and a successful boot do not establish in-car acceptance.
 
+The observed four-byte Smart DSU firmware reports a timeout under controller traffic. This configuration now retains **stock ACC** to avoid the resulting Cruise Fault. Its factory minimum speed applies, and Experimental Mode is unavailable in that configuration until a compatible DSU firmware setup is verified.
+
 ## Made for this Prius setup
 
 If you own a **2016 Prius with Toyota Safety Sense P**, start here. Model year alone is not enough: this port requires the correct factory driver-assistance equipment and both additional devices.

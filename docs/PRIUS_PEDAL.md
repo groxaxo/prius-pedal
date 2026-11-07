@@ -24,10 +24,14 @@ The production FrogPilot reference is [`8955eaae9574c2a9723f401bdbaf120bf021d08a
 
 ## Implemented behavior
 
+### Current four-byte SDSU compatibility limit
+
+The observed four-byte SDSU reports STATE 5 exactly 0.500 seconds after standard ACC output begins. The host and panda fault checks correctly block engagement. Four-byte frame detection alone therefore no longer enables the Pedal longitudinal path: the device keeps stock ACC, with its original engagement limits and no Experimental Mode. The four-byte parser and safety checks remain available for bench testing; firmware identification, correction and hardware acceptance are required before activation.
+
 The feature is **selected automatically from detected hardware**, following FrogPilot's Prius/Pedal/Smart DSU activation logic. It is selected only when the existing car identification resolves to `CAR.TOYOTA_PRIUS` and both expected hardware messages are present on bus 0:
 
 - comma Pedal sensor: **`0x201`, 6 bytes**.
-- Smart DSU: **`0x2FF`, 4 or 8 bytes**. The target car sends the four-byte format at 50 Hz, with a rolling counter and Toyota checksum; the legacy eight-byte definition remains supported.
+- Smart DSU for automatic activation: **`0x2FF`, 8 bytes**. The four-byte format is parsed and tested but held out of automatic activation pending firmware compatibility verification.
 
 For four-byte status, the interface selects the dedicated parser definition and `PRIUS_PEDAL_SDSU_4` safety flag. Both layers validate the counter and checksum; malformed lengths, checksum failures and repeated counters are covered by regression tests. The legacy eight-byte definition uses its existing 100 Hz message expectation.
 

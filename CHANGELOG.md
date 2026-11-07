@@ -1,5 +1,11 @@
 # Changelog
 
+## Four-byte SDSU stock-ACC recovery
+
+- Keep stock ACC when the detected SDSU uses the four-byte protocol whose observed firmware times out under standard ACC traffic. This prevents unsupported automatic longitudinal activation from causing the Cruise Fault warning.
+- Preserve all device-state, counter, checksum and freshness safety checks. Retain the four-byte parser/safety implementation for bench verification.
+- The factory speed limit and stock longitudinal control apply in this recovery mode; Experimental Mode requires a subsequently verified compatible hardware/firmware configuration.
+
 ## Native rebuild and four-byte SDSU firmware verification — 7 November 2026
 
 - Publish the matching `DEV-129e12b8-RELEASE` STM32H7 application, development bootstub and source/hash manifest alongside the four-byte Smart DSU fix.

@@ -1,5 +1,7 @@
 # A guide for 2016 Prius owners
 
+**Current four-byte Smart DSU configuration:** the observed firmware times out under controller traffic. This recovery retains stock ACC and its factory engagement limits. Experimental Mode is unavailable in this configuration until compatible DSU firmware is identified and verified.
+
 [← Back to Prius Pedal Lab](../README.md)
 
 Prius Pedal Lab is a development project for a **2016 Toyota Prius with Toyota Safety Sense P, a comma 3X, a physical comma Pedal, and a Smart DSU**. Its specific addition is bounded Pedal assist when moving off from standstill, adapted from FrogPilot.

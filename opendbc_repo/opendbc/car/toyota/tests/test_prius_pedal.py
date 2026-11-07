@@ -20,14 +20,34 @@ def prius_params(pedal=True, sdsu=True, alpha=False, candidate=CAR.TOYOTA_PRIUS,
 
 
 class TestPriusPedal(unittest.TestCase):
-  def test_live_four_byte_sdsu_selects_pedal_without_alpha(self):
-    cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: 4}, 1: {}, 2: {}}, [], False, False, False)
+  def test_unverified_four_byte_sdsu_keeps_stock_acc(self):
+    for alpha, is_release in itertools.product((False, True), repeat=2):
+      cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: 4}, 1: {}, 2: {}}, [], alpha, is_release, False)
+      self.assertFalse(cp.openpilotLongitudinalControl)
+      self.assertFalse(cp.flags & (ToyotaFlags.PRIUS_PEDAL | ToyotaFlags.PRIUS_PEDAL_SDSU_4))
+      self.assertTrue(cp.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.STOCK_LONGITUDINAL)
+      self.assertFalse(cp.safetyConfigs[0].safetyParam & (ToyotaSafetyFlags.PRIUS_PEDAL | ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4))
+
+  def test_four_byte_parser_remains_available_for_explicit_bench_configuration(self):
+    cp = prius_params()
+    cp.flags |= ToyotaFlags.PRIUS_PEDAL_SDSU_4.value
+    cp.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4.value
     self.assertTrue(cp.openpilotLongitudinalControl)
     self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL)
     self.assertEqual(cp.minEnableSpeed, -1.)
     self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL_SDSU_4)
     ci = CarInterface(cp)
     self.assertEqual(ci.can_parsers['pt'].dbc_name, 'toyota_prius_pedal_sdsu4_pt_generated')
+
+  def test_four_byte_recovery_sends_no_pedal_or_acc_heartbeat(self):
+    cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: 4}, 1: {}, 2: {}}, [], False, False, False)
+    ci = CarInterface(cp)
+    cs = ci.CS
+    cs.out = structs.CarState(canValid=True, gearShifter='park').as_reader()
+    controller = ci.CarController({bus: parser.dbc_name for bus, parser in ci.can_parsers.items()}, cp)
+    cc = structs.CarControl(enabled=False, longActive=False)
+    _, sends = controller.update(cc.as_reader(), cs, 0)
+    self.assertFalse(any(addr in (0x200, 0x343) for addr, _, _ in sends))
 
   def test_four_byte_sdsu_parser_checks_real_counter_and_checksum(self):
     parser = CANParser('toyota_prius_pedal_sdsu4_pt_generated', [('SDSU', 50)], 0)
