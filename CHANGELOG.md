@@ -1,5 +1,13 @@
 # Changelog
 
+## FrogPilot four-byte SDSU compatibility — 8 November 2026
+
+- Restore openpilot longitudinal selection for the TSS-P Prius with a six-byte Pedal and four-byte Smart DSU, making Experimental Mode available again.
+- Correct a status interpretation introduced by this port: legacy SDSU status 5 is expected when standard openpilot ACC commands suppress stock ACC forwarding. FrogPilot does not treat SDSU status as a native ACC fault.
+- Accept status 5 only on the four-byte path. Preserve the raw status, all other SDSU and Pedal fault checks, native Toyota ACC/lockout faults, checksum/counter/freshness checks and actuator limits.
+- Add host and release-safety regressions for the observed status, retained faults and malformed/stale frames. The eight-byte behavior is unchanged.
+- Supersede the stock-ACC recovery below; clearing the warning in stock mode did not meet the all-speed/Experimental Mode goal. Hardware driving acceptance remains separate from these software changes.
+
 ## Four-byte SDSU stock-ACC recovery
 
 - Keep stock ACC when the detected SDSU uses the four-byte protocol whose observed firmware times out under standard ACC traffic. This prevents unsupported automatic longitudinal activation from causing the Cruise Fault warning.

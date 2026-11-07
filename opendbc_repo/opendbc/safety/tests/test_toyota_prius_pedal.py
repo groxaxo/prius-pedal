@@ -99,6 +99,8 @@ class TestToyotaPriusPedalSafety(test_toyota.TestToyotaSafetyTorque):
 
   def test_faulted_inputs_cannot_actuate(self):
     for device, state in itertools.product(('pedal', 'sdsu'), range(1, 16)):
+      if device == 'sdsu' and state == 5 and self.SAFETY_PARAM & ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4:
+        continue  # Legacy stock-ACC watchdog status under openpilot takeover.
       self._reset_safety_hooks()
       self.assertTrue(self._rx(self._sensor()))
       self.assertTrue(self._rx(self._sdsu()))
@@ -145,6 +147,41 @@ class TestToyotaPriusPedalFourByteSafety(TestToyotaPriusPedalSafety):
   @property
   def SAFETY_PARAM(self):
     return super().SAFETY_PARAM | ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4
+
+  def test_legacy_timeout_status_retains_actuation_limits(self):
+    self.assertTrue(self._rx(self._sdsu(state=5)))
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(self._pedal(True)))
+    self.assertTrue(self._tx(self._accel_msg(1)))
+    self.assertFalse(self._tx(self._accel_msg(3)))
+    self.safety.set_controls_allowed(False)
+    self.assertFalse(self._tx(self._pedal(True)))
+    self.assertFalse(self._tx(self._accel_msg(1)))
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._rx(self._user_brake_msg(True)))
+    self.assertFalse(self._tx(self._pedal(True)))
+    self.assertFalse(self._tx(self._accel_msg(1)))
+    self.assertTrue(self._tx(self._pedal(False)))
+
+  def test_legacy_timeout_status_still_requires_valid_fresh_frames(self):
+    self.assertTrue(self._rx(self._sdsu(state=5)))
+    self.safety.set_timer(250001)
+    self.safety.set_controls_allowed(True)
+    self.assertFalse(self._tx(self._pedal(True)))
+    self.assertFalse(self._tx(self._accel_msg(1)))
+    self.assertTrue(self._rx(self._sensor()))
+    msg = self._sdsu(state=5)
+    msg[0].data[3] ^= 1
+    self.assertFalse(self._rx(msg))
+    self.safety.set_controls_allowed(True)
+    self.assertFalse(self._tx(self._pedal(True)))
+    good = self._sdsu(state=5)
+    self.assertTrue(self._rx(good))
+    for _ in range(6):
+      self._rx(good)
+    self.safety.set_controls_allowed(True)
+    self.assertFalse(self._tx(self._pedal(True)))
+    self.assertFalse(self._tx(self._accel_msg(1)))
 
   def test_wrong_length_sdsu_cannot_satisfy_freshness(self):
     for length in (0, 1, 2, 3, 5, 6, 7, 8):

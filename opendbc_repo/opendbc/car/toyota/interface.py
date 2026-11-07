@@ -105,15 +105,17 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = ((bool(ret.flags & ToyotaFlags.TSS2) and not (ret.flags & ToyotaFlags.RADAR_ACC)) or
                                         bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value))
 
-    # Require a supported SDSU protocol as well as the Pedal. The observed
-    # four-byte module times out under standard ACC traffic; frame presence
-    # alone does not qualify its firmware. Keep stock ACC until it is verified.
+    # Follow FrogPilot: the Smart DSU allows openpilot longitudinal control.
+    # Require both devices and select the parser/safety protocol by frame length.
     prius_pedal_available = (candidate == CAR.TOYOTA_PRIUS and fingerprint[0].get(0x201) == 6 and
-                              fingerprint[0].get(0x2FF) == 8)
+                              fingerprint[0].get(0x2FF) in (4, 8))
     if prius_pedal_available:
       ret.flags |= ToyotaFlags.PRIUS_PEDAL.value
       ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.PRIUS_PEDAL.value
       ret.openpilotLongitudinalControl = True
+      if fingerprint[0][0x2FF] == 4:
+        ret.flags |= ToyotaFlags.PRIUS_PEDAL_SDSU_4.value
+        ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4.value
 
     ret.autoResumeSng = ret.openpilotLongitudinalControl
 

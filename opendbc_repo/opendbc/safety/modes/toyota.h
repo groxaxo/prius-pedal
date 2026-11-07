@@ -120,7 +120,11 @@ static bool toyota_get_quality_flag_valid(const CANPacket_t *msg) {
     valid = (msg->data[4] >> 4) == 0U;  // GAS_SENSOR.STATE
   }
   if (msg->addr == 0x2FFU) {
-    valid = (msg->data[2] >> 4) == 0U;  // SDSU.STATE, including AEB takeover
+    // Four-byte legacy firmware's stock ACC watchdog expires during 0x343
+    // takeover. This status is not an actuator fault in openpilot control mode.
+    // Preserve all other status checks and independent CRC/counter/freshness checks.
+    uint8_t state = msg->data[2] >> 4;
+    valid = (state == 0U) || ((GET_LEN(msg) == 4U) && (state == 5U));
   }
   if (msg->addr == 0x260U) {
     valid = !GET_BIT(msg, 3U);  // STEER_TORQUE_SENSOR.STEER_ANGLE_INITIALIZING

@@ -20,26 +20,20 @@ def prius_params(pedal=True, sdsu=True, alpha=False, candidate=CAR.TOYOTA_PRIUS,
 
 
 class TestPriusPedal(unittest.TestCase):
-  def test_unverified_four_byte_sdsu_keeps_stock_acc(self):
+  def test_four_byte_sdsu_selects_openpilot_control(self):
     for alpha, is_release in itertools.product((False, True), repeat=2):
       cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: 4}, 1: {}, 2: {}}, [], alpha, is_release, False)
-      self.assertFalse(cp.openpilotLongitudinalControl)
-      self.assertFalse(cp.flags & (ToyotaFlags.PRIUS_PEDAL | ToyotaFlags.PRIUS_PEDAL_SDSU_4))
-      self.assertTrue(cp.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.STOCK_LONGITUDINAL)
-      self.assertFalse(cp.safetyConfigs[0].safetyParam & (ToyotaSafetyFlags.PRIUS_PEDAL | ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4))
+      self.assertTrue(cp.openpilotLongitudinalControl)
+      self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL)
+      self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL_SDSU_4)
+      self.assertFalse(cp.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.STOCK_LONGITUDINAL)
+      self.assertTrue(cp.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.PRIUS_PEDAL)
+      self.assertTrue(cp.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4)
+      self.assertEqual(cp.minEnableSpeed, -1.)
+      ci = CarInterface(cp)
+      self.assertEqual(ci.can_parsers['pt'].dbc_name, 'toyota_prius_pedal_sdsu4_pt_generated')
 
-  def test_four_byte_parser_remains_available_for_explicit_bench_configuration(self):
-    cp = prius_params()
-    cp.flags |= ToyotaFlags.PRIUS_PEDAL_SDSU_4.value
-    cp.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4.value
-    self.assertTrue(cp.openpilotLongitudinalControl)
-    self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL)
-    self.assertEqual(cp.minEnableSpeed, -1.)
-    self.assertTrue(cp.flags & ToyotaFlags.PRIUS_PEDAL_SDSU_4)
-    ci = CarInterface(cp)
-    self.assertEqual(ci.can_parsers['pt'].dbc_name, 'toyota_prius_pedal_sdsu4_pt_generated')
-
-  def test_four_byte_recovery_sends_no_pedal_or_acc_heartbeat(self):
+  def test_four_byte_control_sends_inactive_heartbeats_while_disengaged(self):
     cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: 4}, 1: {}, 2: {}}, [], False, False, False)
     ci = CarInterface(cp)
     cs = ci.CS
@@ -47,7 +41,9 @@ class TestPriusPedal(unittest.TestCase):
     controller = ci.CarController({bus: parser.dbc_name for bus, parser in ci.can_parsers.items()}, cp)
     cc = structs.CarControl(enabled=False, longActive=False)
     _, sends = controller.update(cc.as_reader(), cs, 0)
-    self.assertFalse(any(addr in (0x200, 0x343) for addr, _, _ in sends))
+    frames = {addr: data for addr, data, _ in sends}
+    self.assertEqual(frames[0x200][:5], bytes(5))
+    self.assertEqual(frames[0x343][:2], bytes(2))
 
   def test_four_byte_sdsu_parser_checks_real_counter_and_checksum(self):
     parser = CANParser('toyota_prius_pedal_sdsu4_pt_generated', [('SDSU', 50)], 0)
@@ -171,6 +167,32 @@ class TestPriusPedal(unittest.TestCase):
     _, sends = ci.CC.update(cc.as_reader(), ci.CS, 0)
     pedal = next(data for addr, data, _ in sends if addr == 0x200)
     self.assertEqual(pedal[:5], bytes(5))
+
+  def test_legacy_status_does_not_mask_native_or_pedal_faults(self):
+    for length in (4, 8):
+      cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: length}, 1: {}, 2: {}}, [], False, False, False)
+      ci = CarInterface(cp)
+      packers = {bus: CANPacker(parser.dbc_name) for bus, parser in ci.can_parsers.items()}
+      ci.CS.update(ci.can_parsers)
+      timestamp = 1_000_000_000
+      for sdsu_state, pedal_state, native_fault, lockout in itertools.product(range(16), (0, 5), (0, 1), (1, 2)):
+        timestamp += 20_000_000
+        for bus, parser in ci.can_parsers.items():
+          frames = []
+          for message in list(parser.message_states.values()):
+            values = {
+              'SDSU': {'STATE': sdsu_state},
+              'GAS_SENSOR': {'STATE': pedal_state},
+              'PCM_CRUISE_2': {'ACC_FAULTED': native_fault, 'LOW_SPEED_LOCKOUT': lockout},
+            }.get(message.name, {})
+            frames.append(packers[bus].make_can_msg(message.name, parser.bus, values))
+          parser.update([[timestamp, frames]])
+        state = ci.CS.update(ci.can_parsers)
+        with self.subTest(length=length, sdsu=sdsu_state, pedal=pedal_state, native=native_fault, lockout=lockout):
+          expected_ready = pedal_state == 0 and (sdsu_state == 0 or (length == 4 and sdsu_state == 5))
+          self.assertEqual(ci.CS.pedal_ready, expected_ready)
+          self.assertEqual(state.accFaulted, not expected_ready or bool(native_fault) or lockout == 2)
+          self.assertEqual(ci.can_parsers['pt'].vl['SDSU']['STATE'], sdsu_state)
 
   def test_live_parser_driver_override_faults_and_distance_button(self):
     ci = CarInterface(prius_params())

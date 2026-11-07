@@ -14,7 +14,7 @@ A 2016 Prius with Toyota Safety Sense P maps to **`CAR.TOYOTA_PRIUS`**, not `TOY
 | --- | --- | --- |
 | Vehicle/ECU identification | `selfdrive/car/toyota/values.py`, `fingerprints.py` | `opendbc_repo/opendbc/car/toyota/values.py`, existing `fingerprints.py` |
 | Pedal + SDSU detection and longitudinal selection | `selfdrive/car/toyota/interface.py` | `opendbc_repo/opendbc/car/toyota/interface.py` |
-| Physical pedal tracks, faults and follow-distance button | `selfdrive/car/toyota/carstate.py` | `opendbc_repo/opendbc/car/toyota/carstate.py` |
+| Physical pedal tracks and follow-distance button | `selfdrive/car/toyota/carstate.py` | `opendbc_repo/opendbc/car/toyota/carstate.py` |
 | Prius stop/start assist and standstill request | `selfdrive/car/toyota/carcontroller.py` | `opendbc_repo/opendbc/car/toyota/carcontroller.py` |
 | Pedal CAN encoder and CRC | `selfdrive/car/__init__.py` | `opendbc_repo/opendbc/car/toyota/toyotacan.py`, `opendbc_repo/opendbc/can/dbc.py` |
 | CAN definitions | `opendbc/toyota_nodsu_pt_generated.dbc` | Dedicated `toyota_prius_pedal_pt_generated` and `toyota_prius_pedal_sdsu4_pt_generated` DBCs for eight-byte and four-byte SDSU status |
@@ -24,14 +24,20 @@ The production FrogPilot reference is [`8955eaae9574c2a9723f401bdbaf120bf021d08a
 
 ## Implemented behavior
 
-### Current four-byte SDSU compatibility limit
+### Four-byte SDSU takeover status
 
-The observed four-byte SDSU reports STATE 5 exactly 0.500 seconds after standard ACC output begins. The host and panda fault checks correctly block engagement. Four-byte frame detection alone therefore no longer enables the Pedal longitudinal path: the device keeps stock ACC, with its original engagement limits and no Experimental Mode. The four-byte parser and safety checks remain available for bench testing; firmware identification, correction and hardware acceptance are required before activation.
+This port initially treated every nonzero `SDSU.STATE` as an ACC failure. That was an extra interlock introduced by the port, not FrogPilot's behavior. It caused a false Cruise Fault with the observed legacy four-byte protocol. The temporary stock-ACC recovery cleared the warning but disabled the requested openpilot longitudinal control and Experimental Mode.
+
+The current comparison is pinned to FrogPilot production [`a22c476734514e36b196168cd39743b74f30dc01`](https://github.com/FrogAi/FrogPilot/tree/a22c476734514e36b196168cd39743b74f30dc01) and development [`2a34bc4697dc92e2071546edc662b4f228a90112`](https://github.com/FrogAi/FrogPilot/tree/2a34bc4697dc92e2071546edc662b4f228a90112). Production selects openpilot longitudinal control on Smart DSU detection, uses standard Toyota `ACC_CONTROL` (`0x343`), and reads the SDSU follow-distance button without converting its status nibble into `accFaulted`. Development likewise retains native Toyota ACC fault reporting and does not add an SDSU status quality gate.
+
+In [legacy reference firmware](https://github.com/RetroPilot/ocelot/blob/94efc67349227b7a4dc410c585c9dee507a5960e/firmware/smart_dsu/main.c), receiving openpilot's `0x343` suppresses forwarding the stock DSU's ACC frame. That branch also skips refreshing the stock-ACC watchdog, so it reports `STATE 5` after 500 ms even with valid incoming frames. The status does not gate forwarding or openpilot's actuator commands. The captured vehicle startup showed this exact 500 ms transition, healthy Pedal state, no native ACC fault and acknowledged controller output. This matches the reference protocol behavior; it does not identify the installed board or firmware version.
+
+The compatibility correction accepts status **0 or 5 only for the four-byte SDSU path** in both the host and Panda, while preserving the raw status in CAN data. All other SDSU statuses, every nonzero Pedal status, native Toyota ACC faults, low-speed lockout, invalid checksums/counters and stale streams retain their checks. The eight-byte status policy is unchanged. Four-byte detection again selects openpilot longitudinal control and makes Experimental Mode available. This uses FrogPilot's control path without flashing the separate, unidentified Smart DSU or switching to private `0xF10` commands.
 
 The feature is **selected automatically from detected hardware**, following FrogPilot's Prius/Pedal/Smart DSU activation logic. It is selected only when the existing car identification resolves to `CAR.TOYOTA_PRIUS` and both expected hardware messages are present on bus 0:
 
 - comma Pedal sensor: **`0x201`, 6 bytes**.
-- Smart DSU for automatic activation: **`0x2FF`, 8 bytes**. The four-byte format is parsed and tested but held out of automatic activation pending firmware compatibility verification.
+- Smart DSU: **`0x2FF`, 4 or 8 bytes**.
 
 For four-byte status, the interface selects the dedicated parser definition and `PRIUS_PEDAL_SDSU_4` safety flag. Both layers validate the counter and checksum; malformed lengths, checksum failures and repeated counters are covered by regression tests. The legacy eight-byte definition uses its existing 100 Hz message expectation.
 
@@ -43,7 +49,7 @@ FrogPilot treats this Prius as a stop-and-go car. This port uses its fixed **0.1
 
 Inactive pedal commands contain **raw zero** in both command tracks, with `ENABLE=0`. Encoding physical zero using the DBC offsets would alter passthrough scaling. The rolling 4-bit counter and reverse CRC-8/D5 are generated and validated. Driver accelerator override uses the integer mean of both physical sensor tracks with FrogPilot's threshold of 805. PCM gas feedback from the interceptor is not mistaken for driver input. SDSU follow-distance button events are preserved.
 
-The panda mode independently checks the fixed command tracks, enable/reserved bits, CRC, controls permission, driver gas/brake, standstill, pedal faults, SDSU state, message counters and data freshness. Both device streams must be valid and no more than **250 ms** old for nonzero longitudinal commands. A stale or invalid stream blocks nonzero actuation while permitting inactive/cancel messages. Incompatible stock-longitudinal, LTA, alternate-brake or SecOC modes cannot enable pedal output. Existing steering limits and the full safety suite are retained.
+The panda mode independently checks the fixed command tracks, enable/reserved bits, CRC, controls permission, driver gas/brake, standstill, pedal faults, the protocol-specific SDSU status policy above, message counters and data freshness. Both device streams must be valid and no more than **250 ms** old for nonzero longitudinal commands. A stale or invalid stream blocks nonzero actuation while permitting inactive/cancel messages. Incompatible stock-longitudinal, LTA, alternate-brake or SecOC modes cannot enable pedal output. Existing steering limits and the full safety suite are retained.
 
 ## Validation and build
 
@@ -61,7 +67,7 @@ gcovr -r opendbc/safety --exclude '.*/libsafety/.*' --fail-under-line 100 --txt-
 
 On macOS, add `--gcov-executable 'xcrun llvm-cov gcov'` to the last command.
 
-The local full safety suite ran **3,274 tests**, with **398 inherited skips**, successfully. CAN parsing/packing ran **49 tests** successfully. Safety coverage was **100% of 3,036 lines and all 190 functions**; branch coverage was **97.0%**. The targeted tests include the release-mode firmware build, gating across Toyota platforms, driver override, cancellation, device faults, malformed/replayed CAN packets, timeouts, command bounds, 50 Hz scheduling and live parser integration.
+The local full safety suite ran **3,276 tests**, with **398 inherited skips**, successfully. CAN parsing/packing ran **49 tests** successfully. Safety coverage was **100% of 3,037 lines and all 190 functions**; branch coverage was **97.0%**. The targeted tests include the release-mode firmware build, gating across Toyota platforms, driver override, cancellation, device faults, malformed/replayed CAN packets, timeouts, command bounds, 50 Hz scheduling and live parser integration.
 
 The four-byte SDSU application was also rebuilt on the target comma 3X. That physical-device run passed **23 Toyota tests** and ran **101 Prius safety tests**, with **8 inherited skips** and no failures. See the [rebuild and offroad boot record](DEVICE_VERIFICATION.md) for the exact installed source, firmware and retained model assets. The workflow below runs the complete regression suite for each published revision.
 

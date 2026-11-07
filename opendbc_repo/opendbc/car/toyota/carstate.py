@@ -82,7 +82,13 @@ class CarState(CarStateBase):
         # physical pedal tracks for the driver's override, as FrogPilot does.
         pedal = cp.vl["GAS_SENSOR"]
         ret.gasPressed = (pedal["INTERCEPTOR_GAS"] + pedal["INTERCEPTOR_GAS2"]) // 2 > 805
-        self.pedal_ready = cp.can_valid and pedal["STATE"] == 0 and cp.vl["SDSU"]["STATE"] == 0
+        # Legacy four-byte SDSU firmware stops refreshing its stock ACC watchdog
+        # during openpilot's 0x343 takeover, so STATE 5 is expected in this mode.
+        # FrogPilot does not use SDSU.STATE as an ACC fault. Keep our additional
+        # checks for other statuses, the Pedal, and native Toyota ACC faults.
+        sdsu_state = cp.vl["SDSU"]["STATE"]
+        sdsu_ready = sdsu_state == 0 or (bool(self.CP.flags & ToyotaFlags.PRIUS_PEDAL_SDSU_4) and sdsu_state == 5)
+        self.pedal_ready = cp.can_valid and pedal["STATE"] == 0 and sdsu_ready
         ret.accFaulted = not self.pedal_ready
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
       if not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:

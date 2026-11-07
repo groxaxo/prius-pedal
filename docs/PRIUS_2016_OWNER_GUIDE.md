@@ -1,6 +1,6 @@
 # A guide for 2016 Prius owners
 
-**Current four-byte Smart DSU configuration:** the observed firmware times out under controller traffic. This recovery retains stock ACC and its factory engagement limits. Experimental Mode is unavailable in this configuration until compatible DSU firmware is identified and verified.
+**Current four-byte Smart DSU configuration:** the FrogPilot control path is restored. The port now distinguishes the legacy stock-ACC watchdog status from an actuator fault, selects openpilot longitudinal control, and exposes Experimental Mode. Road engagement and braking acceptance remain separate from software and parked verification. See the [compatibility explanation](PRIUS_PEDAL.md#four-byte-sdsu-takeover-status).
 
 [← Back to Prius Pedal Lab](../README.md)
 
