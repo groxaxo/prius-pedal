@@ -8,6 +8,8 @@ This uses the existing comma SSH-key workflow. The fork's [`SshKeyFetcher`](../o
 
 This procedure passed a real clear-and-import refresh and fresh login on the target comma 3X. A subsequent offroad reboot retained access. See the [7 November 2026 verification record](DEVICE_VERIFICATION.md) for the tested versions and scope.
 
+The later native rebuild and reinstall also preserved the saved authorization list. After its final reboot, a fresh login through the existing Mac host alias succeeded with the same identity, including after the temporary USB port forward was removed. No replacement key pair was generated.
+
 ## Register the existing public key
 
 For an existing identity at `~/.ssh/id_ed25519`, inspect its public fingerprint:

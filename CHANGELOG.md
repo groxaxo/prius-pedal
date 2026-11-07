@@ -1,5 +1,14 @@
 # Changelog
 
+## Native rebuild and four-byte SDSU firmware verification — 7 November 2026
+
+- Publish the matching `DEV-129e12b8-RELEASE` STM32H7 application, development bootstub and source/hash manifest alongside the four-byte Smart DSU fix.
+- Record the physical comma 3X native application rebuild and reinstall at `098a9d9`, including the deliberate retention of packaged driving/monitoring models because the release omits ONNX source inputs.
+- Record 23 passing Toyota tests and 101 Prius safety tests run with 8 inherited skips and no failures on the comma.
+- Recheck the full local suite: 3,274 safety tests with 398 inherited skips and no failures, 49 passing CAN tests, and 100% safety line coverage across 3,036 lines and all 190 functions.
+- Verify a normal reboot, the physical Prius banner, existing Mac SSH access, unchanged saved authorization, disabled automatic updates and inactive Firehose.
+- Record 134.81 seconds of stable offroad service/MCU observations, zero MCU faults or SPI errors, and no captured application/storage faults or failed units in the inspected boot window. In-car acceptance remains pending.
+
 ## Smart DSU compatibility fix — 7 November 2026
 
 - Recognize the target Prius's four-byte Smart DSU status at 50 Hz, while retaining the legacy eight-byte variant.
