@@ -21,7 +21,7 @@ comma 3X · comma Pedal · Smart DSU
 > [!IMPORTANT]
 > **Development candidate — hardware validation is still pending.** The software tests and firmware build pass, but this project has not been qualified in the car. The branch bundles a matching panda application and development bootstub. Back up the device and verify the firmware pair and its signing configuration before controlled installation. Bundled firmware and a successful boot do not establish in-car acceptance.
 
-The four-byte Smart DSU path now uses **openpilot longitudinal control**, following FrogPilot. The port no longer misclassifies the legacy stock-ACC watchdog status as a Cruise Fault during takeover, so Experimental Mode is available again. Other device faults and CAN integrity checks remain enforced. See the [source comparison and compatibility details](docs/PRIUS_PEDAL.md#four-byte-sdsu-takeover-status); road engagement and braking acceptance are still pending.
+The four-byte Smart DSU path now uses **openpilot longitudinal control**, following FrogPilot. The port no longer misclassifies the legacy stock-ACC watchdog status as a Cruise Fault during takeover, so Experimental Mode is available again. Other device faults and CAN integrity checks remain enforced. See the [source comparison and compatibility details](docs/PRIUS_PEDAL.md#four-byte-sdsu-takeover-status); [parked installation and reboot checks have passed](docs/PRIUS_PARKED_VERIFICATION.md), while road engagement and braking acceptance are still pending.
 
 ## Made for this Prius setup
 

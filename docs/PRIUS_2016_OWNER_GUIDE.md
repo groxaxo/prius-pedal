@@ -6,7 +6,7 @@
 
 Prius Pedal Lab is a development project for a **2016 Toyota Prius with Toyota Safety Sense P, a comma 3X, a physical comma Pedal, and a Smart DSU**. Its specific addition is bounded Pedal assist when moving off from standstill, adapted from FrogPilot.
 
-**The code and matching test firmware pair are available. In-car validation is still pending.** The four-byte Smart DSU candidate was rebuilt and reinstalled on the comma, then passed [offroad reboot verification on 7 November 2026](DEVICE_VERIFICATION.md). The running `DEV-129e12b8-RELEASE` firmware matched the bundled image, the Prius banner appeared, and the existing owner SSH key remained authorized.
+**Installed and verified while parked on 8 November 2026.** The running `DEV-42bec01b-RELEASE` firmware matches the bundle, the Cruise Fault is absent, and Experimental Mode survives a full reboot. See the [current parked verification record](PRIUS_PARKED_VERIFICATION.md). Road engagement and braking acceptance remain pending.
 
 ## Is your Prius the right platform?
 
@@ -78,12 +78,13 @@ Message presence is a detection condition, not proof of correct wiring, device f
 | Full safety suite and line coverage | Passed; workflow enforces 100% safety line coverage |
 | STM32H7 firmware build | Passed; matching application, development bootstub and source/hash manifest bundled in `main` |
 | Native application rebuild | Passed on the comma; 23 Toyota tests passed and 101 Prius safety tests ran with 8 inherited skips and no failures; packaged driving models retained |
-| Firmware startup on the target device | Four-byte SDSU firmware `DEV-129e12b8-RELEASE` matched the bundled signature after reboot on 7 November 2026 |
+| Firmware startup on the target device | `DEV-42bec01b-RELEASE` matched the bundle after reboot on 8 November; [current record](PRIUS_PARKED_VERIFICATION.md) |
 | Home banner and durable owner SSH | Physical banner confirmed; fresh login passed after GitHub-key refresh and reboot; [verification record](DEVICE_VERIFICATION.md) |
 | Saved update/upload preferences | Automatic updates disabled and Firehose inactive after the rebuild and reboot; [scope and settings](DEVICE_VERIFICATION.md#observed-results) |
 | Recorded vehicle-CAN replay | Pending |
 | Physical harness, Pedal calibration, and SDSU/AEB behavior | Pending |
-| Stationary hardware and driver-override acceptance | Pending |
+| Parked hardware/software status | Valid CAN, no ACC/Panda fault, inactive commands and persistent Experimental Mode verified; [record](PRIUS_PARKED_VERIFICATION.md) |
+| Physical driver-override acceptance | Pending |
 | In-car driving acceptance | Pending |
 
 [Latest validation runs](https://github.com/groxaxo/prius-pedal/actions/workflows/prius-pedal.yml) · [Detailed software evidence and build commands](PRIUS_PEDAL.md#validation-and-build)
@@ -98,7 +99,8 @@ For a useful issue report, include the vehicle's market/trim and TSS-P equipment
 
 ## Where to go next
 
-- [Completed offroad device checks and remaining acceptance work](DEVICE_VERIFICATION.md)
+- [Current parked checks and remaining acceptance work](PRIUS_PARKED_VERIFICATION.md)
+- [Earlier native rebuild and offroad checks](DEVICE_VERIFICATION.md)
 - [Keep existing Mac SSH access through GitHub-key refreshes](SSH_ACCESS.md)
 - [Implementation, exact behavior, and FrogPilot source map](PRIUS_PEDAL.md)
 - [Test and firmware build instructions](PRIUS_PEDAL.md#validation-and-build)

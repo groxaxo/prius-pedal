@@ -2,6 +2,8 @@
 
 [← Back to Prius Pedal Lab](../README.md)
 
+For the newer FrogPilot compatibility installation and stationary reboot checks, see the [8 November parked verification record](PRIUS_PARKED_VERIFICATION.md). This page retains the earlier offroad rebuild evidence.
+
 The application with four-byte Smart DSU support was rebuilt and reinstalled on the target comma 3X, then passed a normal reboot and offroad verification. The car remained disconnected throughout these checks. Physical vehicle and driving acceptance remain pending.
 
 ## Software checked
