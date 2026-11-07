@@ -32,6 +32,14 @@ class TestToyotaPriusPedalSafety(test_toyota.TestToyotaSafetyTorque):
       'INTERCEPTOR_GAS': gas, 'INTERCEPTOR_GAS2': gas, 'STATE': state, 'COUNTER_PEDAL': counter,
     })
 
+  def test_live_four_byte_sdsu_is_valid(self):
+    self.safety.set_safety_hooks(self.SAFETY_MODEL, self.SAFETY_PARAM | ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4)
+    self.safety.init_tests()
+    self.assertTrue(self._rx(self._sensor()))
+    self.assertTrue(self._rx(libsafety_py.make_CANPacket(0x2FF, 0, bytes.fromhex('00000005'))))
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(self._pedal(True)))
+
   def _sdsu(self, state=0):
     return self.packer.make_can_msg_safety('SDSU', 0, {'STATE': state})
 
@@ -129,6 +137,35 @@ class TestToyotaPriusPedalSafety(test_toyota.TestToyotaSafetyTorque):
       self.safety.set_controls_allowed(True)
       self.assertFalse(self._tx(self._pedal(True)))
       self.assertFalse(self._tx(self._pedal(False)))
+
+
+class TestToyotaPriusPedalFourByteSafety(TestToyotaPriusPedalSafety):
+  DBC = 'toyota_prius_pedal_sdsu4_pt_generated'
+
+  @property
+  def SAFETY_PARAM(self):
+    return super().SAFETY_PARAM | ToyotaSafetyFlags.PRIUS_PEDAL_SDSU_4
+
+  def test_wrong_length_sdsu_cannot_satisfy_freshness(self):
+    for length in (0, 1, 2, 3, 5, 6, 7, 8):
+      self._reset_safety_hooks()
+      self.assertTrue(self._rx(self._sensor()))
+      self._rx(libsafety_py.make_CANPacket(0x2FF, 0, bytes(length)))
+      self.safety.set_controls_allowed(True)
+      self.assertFalse(self._tx(self._pedal(True)))
+
+  def test_sdsu_checksum_and_replay_block_actuation(self):
+    msg = self._sdsu()
+    msg[0].data[3] ^= 1
+    self.assertFalse(self._rx(msg))
+    self.safety.set_controls_allowed(True)
+    self.assertFalse(self._tx(self._pedal(True)))
+    good = self._sdsu()
+    self.assertTrue(self._rx(good))
+    for _ in range(6):
+      self._rx(good)
+    self.safety.set_controls_allowed(True)
+    self.assertFalse(self._tx(self._pedal(True)))
 
 
 class TestPriusPedalReleaseSafety(unittest.TestCase):

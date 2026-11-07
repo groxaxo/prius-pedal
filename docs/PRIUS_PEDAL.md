@@ -17,7 +17,7 @@ A 2016 Prius with Toyota Safety Sense P maps to **`CAR.TOYOTA_PRIUS`**, not `TOY
 | Physical pedal tracks, faults and follow-distance button | `selfdrive/car/toyota/carstate.py` | `opendbc_repo/opendbc/car/toyota/carstate.py` |
 | Prius stop/start assist and standstill request | `selfdrive/car/toyota/carcontroller.py` | `opendbc_repo/opendbc/car/toyota/carcontroller.py` |
 | Pedal CAN encoder and CRC | `selfdrive/car/__init__.py` | `opendbc_repo/opendbc/car/toyota/toyotacan.py`, `opendbc_repo/opendbc/can/dbc.py` |
-| CAN definitions | `opendbc/toyota_nodsu_pt_generated.dbc` | Dedicated `toyota_prius_pedal_pt_generated` DBC, generated from the existing standard and community definitions |
+| CAN definitions | `opendbc/toyota_nodsu_pt_generated.dbc` | Dedicated `toyota_prius_pedal_pt_generated` and `toyota_prius_pedal_sdsu4_pt_generated` DBCs for eight-byte and four-byte SDSU status |
 | Firmware enforcement | Source is available in FrogPilot's development tree under `opendbc_repo/opendbc/safety/` | `opendbc_repo/opendbc/safety/modes/toyota.h` and its tests |
 
 The production FrogPilot reference is [`8955eaae9574c2a9723f401bdbaf120bf021d08a`](https://github.com/FrogAi/FrogPilot/tree/8955eaae9574c2a9723f401bdbaf120bf021d08a). Its current development safety implementation was also inspected at [`b5c24be2ff6fa2aee5b058d3131382a0e8395309`](https://github.com/FrogAi/FrogPilot/tree/b5c24be2ff6fa2aee5b058d3131382a0e8395309). FrogPilot is MIT licensed, copyright (c) 2018 Comma.ai, Inc.; the upstream MIT license is retained.
@@ -27,7 +27,9 @@ The production FrogPilot reference is [`8955eaae9574c2a9723f401bdbaf120bf021d08a
 The feature is **selected automatically from detected hardware**, following FrogPilot's Prius/Pedal/Smart DSU activation logic. It is selected only when the existing car identification resolves to `CAR.TOYOTA_PRIUS` and both expected hardware messages are present on bus 0:
 
 - comma Pedal sensor: **`0x201`, 6 bytes**.
-- Smart DSU: **`0x2FF`, 8 bytes**.
+- Smart DSU: **`0x2FF`, 4 or 8 bytes**. The target car sends the four-byte format at 50 Hz, with a rolling counter and Toyota checksum; the legacy eight-byte definition remains supported.
+
+For four-byte status, the interface selects the dedicated parser definition and `PRIUS_PEDAL_SDSU_4` safety flag. Both layers validate the counter and checksum; malformed lengths, checksum failures and repeated counters are covered by regression tests. The legacy eight-byte definition uses its existing 100 Hz message expectation.
 
 The interface enables longitudinal control and passes a dedicated Prius/Pedal safety flag as soon as that combination is detected. **No alpha longitudinal-control opt-in is required.** The Prius path does not advertise `alphaLongitudinalAvailable`, so the old alpha toggle is not offered for this configuration. The automatic-selection reference is FrogPilot production [`9985af62b02fce21cbdd2941ebb55a598a84fffa`](https://github.com/FrogAi/FrogPilot/blob/9985af62b02fce21cbdd2941ebb55a598a84fffa/selfdrive/car/toyota/interface.py). This port retains its narrower requirement for both correctly sized device messages. A stock DSU, disconnected DSU, pedal alone, wrong bus, wrong packet length, Prius V, TSS2 Prius, or another Toyota does not activate this path.
 
@@ -55,7 +57,9 @@ gcovr -r opendbc/safety --exclude '.*/libsafety/.*' --fail-under-line 100 --txt-
 
 On macOS, add `--gcov-executable 'xcrun llvm-cov gcov'` to the last command.
 
-The local full safety suite ran **3,222 tests**, with **394 inherited skips**, successfully. CAN parsing/packing ran **49 tests** successfully. Safety coverage was **100% of 3,030 lines and all 190 functions**; branch coverage was **97.0%**. The targeted tests include the release-mode firmware build, gating across Toyota platforms, driver override, cancellation, device faults, malformed/replayed CAN packets, timeouts, command bounds, 50 Hz scheduling and live parser integration.
+The local full safety suite ran **3,274 tests**, with **398 inherited skips**, successfully. CAN parsing/packing ran **49 tests** successfully. Safety coverage was **100% of 3,036 lines and all 190 functions**; branch coverage was **97.0%**. The targeted tests include the release-mode firmware build, gating across Toyota platforms, driver override, cancellation, device faults, malformed/replayed CAN packets, timeouts, command bounds, 50 Hz scheduling and live parser integration.
+
+The four-byte SDSU application was also rebuilt on the target comma 3X. That physical-device run passed **23 Toyota tests** and ran **101 Prius safety tests**, with **8 inherited skips** and no failures. See the [rebuild and offroad boot record](DEVICE_VERIFICATION.md) for the exact installed source, firmware and retained model assets. The workflow below runs the complete regression suite for each published revision.
 
 The modified STM32H7 firmware also compiled with Arm GNU Toolchain 14.3.rel1 and the project's `-Wall -Wextra -Wstrict-prototypes -Werror` flags. From the repository root, reproduce the isolated pair build with `arm-none-eabi-gcc` on PATH:
 

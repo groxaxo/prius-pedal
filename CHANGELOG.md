@@ -1,5 +1,21 @@
 # Changelog
 
+## Native rebuild and four-byte SDSU firmware verification — 7 November 2026
+
+- Publish the matching `DEV-129e12b8-RELEASE` STM32H7 application, development bootstub and source/hash manifest alongside the four-byte Smart DSU fix.
+- Record the physical comma 3X native application rebuild and reinstall at `098a9d9`, including the deliberate retention of packaged driving/monitoring models because the release omits ONNX source inputs.
+- Record 23 passing Toyota tests and 101 Prius safety tests run with 8 inherited skips and no failures on the comma.
+- Recheck the full local suite: 3,274 safety tests with 398 inherited skips and no failures, 49 passing CAN tests, and 100% safety line coverage across 3,036 lines and all 190 functions.
+- Verify a normal reboot, the physical Prius banner, existing Mac SSH access, unchanged saved authorization, disabled automatic updates and inactive Firehose.
+- Record 134.81 seconds of stable offroad service/MCU observations, zero MCU faults or SPI errors, and no captured application/storage faults or failed units in the inspected boot window. In-car acceptance remains pending.
+
+## Smart DSU compatibility fix — 7 November 2026
+
+- Recognize the target Prius's four-byte Smart DSU status at 50 Hz, while retaining the legacy eight-byte variant.
+- Select the corresponding CAN definition and firmware safety checks from the detected frame length. The four-byte path validates the Toyota checksum, rolling counter, device state and existing freshness limits.
+- Correct the hardware-detection fallback that left stock ACC active and made Experimental Mode unavailable despite the Pedal and Smart DSU being present.
+- Add regression cases using the observed four-byte payload, including malformed lengths, checksum failures and replayed counters. Vehicle engagement acceptance remains separate from software validation.
+
 ## Offroad verification and durable SSH record — 7 November 2026
 
 - Record the completed comma 3X reboot, physical Prius banner confirmation, matching running-firmware signature, and stable offroad service/MCU observations.
