@@ -1,7 +1,7 @@
 {
-  "source_commit": "129e12b8a77f2fb9c8e51d6c3875116830fb7aa6",
+  "source_commit": "e944436d8c645479a3657d5df494fc547de002c0",
   "source_dirty": false,
-  "compatible_source_sha256": "21a9de98f7e59eb58a651d7d08596a7bb5fb6ad7761ad16cc46e7f410b3d2daf",
+  "compatible_source_sha256": "8284b8bb5fa98aad3fc9c17d49b008bca93a3e60211cccceba6caaf22985400a",
   "compiler": "arm-none-eabi-gcc (Arm GNU Toolchain 14.3.Rel1 (Build arm-14.174)) 14.3.1 20250623",
   "target": "STM32H7 panda / comma 3X",
   "signing": "Public upstream debug test key; not an official release signature",
@@ -9,8 +9,8 @@
   "bootstub": "Upstream development bootstub accepting official release and public debug keys",
   "acceptance": "Build artifact only; bench, bootstub and vehicle validation required",
   "sha256": {
-    "panda_h7.bin.signed": "8d4ef955fca9475160c3ad57870f3c05c41e4c4a88475f9da58b2086ce495f6d",
-    "version": "d80eec3632f0fb99b70139baf4e1ed48be7e86aecfb9059ad358106db2e018ee",
-    "bootstub.panda_h7.bin": "3b1ad0bfbe6d36933fba5c2a7f268673c5c6fa43db0c2831a8106d869e14394f"
+    "panda_h7.bin.signed": "8ca272d28575ecee95c4c78c3009b920c6de7219cfc7f0a50ee86390b9dcb21f",
+    "version": "fafc7e8d6f2460712ca209e45713f4277c01170f82e2c6966d33d1d566c586c8",
+    "bootstub.panda_h7.bin": "36db537768d0df752ef3c22a93254deb030ff20cfb367a5d5cca9e87dd50e7c7"
   }
 }
