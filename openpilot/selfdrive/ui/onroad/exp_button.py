@@ -1,8 +1,10 @@
 import time
 import pyray as rl
 from openpilot.common.params import Params
+from opendbc.car.toyota.values import ToyotaFlags
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
 
@@ -10,8 +12,11 @@ class ExpButton(Widget):
   def __init__(self, button_size: int, icon_size: int):
     super().__init__()
     self._params = Params()
+    self._conditional_param_available = b"ConditionalExperimentalMode" in self._params.all_keys()
     self._experimental_mode: bool = False
     self._engageable: bool = False
+    self._conditional_mode = False
+    self._auto_armed = False
 
     # State hold mechanism
     self._hold_duration = 2.0  # seconds
@@ -31,11 +36,16 @@ class ExpButton(Widget):
     selfdrive_state = ui_state.sm["selfdriveState"]
     self._experimental_mode = selfdrive_state.experimentalMode
     self._engageable = selfdrive_state.engageable or selfdrive_state.enabled
+    cp = ui_state.CP
+    self._conditional_mode = (self._conditional_param_available and cp is not None and cp.brand == 'toyota' and
+                              bool(cp.flags & ToyotaFlags.PRIUS_PEDAL) and
+                              ui_state.has_longitudinal_control and self._params.get_bool("ConditionalExperimentalMode"))
+    self._auto_armed = self._conditional_mode and self._params.get_bool("ExperimentalMode")
 
   def _handle_mouse_release(self, _):
     super()._handle_mouse_release(_)
     if self._is_toggle_allowed():
-      new_mode = not self._experimental_mode
+      new_mode = not self._params.get_bool("ExperimentalMode")
       self._params.put_bool("ExperimentalMode", new_mode)
 
       # Hold new state temporarily
@@ -51,8 +61,17 @@ class ExpButton(Widget):
     texture = self._txt_exp if self._held_or_actual_mode() else self._txt_wheel
     rl.draw_circle(center_x, center_y, self._rect.width / 2, self._black_bg)
     rl.draw_texture_ex(texture, rl.Vector2(center_x - texture.width / 2, center_y - texture.height / 2), 0.0, 1.0, self._white_color)
+    if self._conditional_mode:
+      label = "AUTO" if self._auto_armed else "AUTO OFF"
+      font = gui_app.font(FontWeight.SEMI_BOLD)
+      width = measure_text_cached(font, label, 20).x
+      rl.draw_text_ex(font, label, rl.Vector2(center_x - width / 2, center_y + self._rect.height / 2 - 26),
+                      20, 0, self._white_color)
 
   def _held_or_actual_mode(self):
+    if self._conditional_mode:
+      # The badge shows the saved request; the icon shows the actual planner mode.
+      return self._experimental_mode
     now = time.monotonic()
     if self._hold_end_time and now < self._hold_end_time:
       return self._held_mode

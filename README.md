@@ -43,6 +43,8 @@ Both the **four-byte Smart DSU status at 50 Hz** and the legacy eight-byte forma
 
 ## A little help when moving off
 
+The optional [Conditional Experimental Mode](docs/PRIUS_CONDITIONAL_EXPERIMENTAL.md) uses cruise/lead planning for normal set-speed driving and Experimental for detected stops and curves. It preserves the launch force and official lateral configuration, with a prompt, validated-frame release from cached stop mode. Installation and driving acceptance are tracked separately in that guide.
+
 The latest [stop-and-go correction](docs/PRIUS_STOP_AND_GO.md) addresses a reproduced case where the planner requested movement but the stock RES-button state kept this port braking. The supported Prius/Pedal path now allows the planner to release that hold. Physical restart acceptance and experimental traffic-light recognition remain separate from software verification.
 
 The port adapts FrogPilot's Prius-specific Pedal behavior to the official software base:

@@ -1,5 +1,7 @@
 import pyray as rl
 from openpilot.common.params import Params
+from opendbc.car.toyota.values import ToyotaFlags
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
@@ -14,6 +16,7 @@ class ExperimentalModeButton(Widget):
     self.button_height = 125
 
     self.params = Params()
+    self.conditional_param_available = b"ConditionalExperimentalMode" in self.params.all_keys()
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
     self.chill_pixmap = gui_app.texture("icons/couch.png", self.img_width, self.img_width)
@@ -49,6 +52,11 @@ class ExperimentalModeButton(Widget):
 
     # Draw text label (left aligned)
     text = tr("EXPERIMENTAL MODE ON") if self.experimental_mode else tr("CHILL MODE ON")
+    cp = ui_state.CP
+    if (self.conditional_param_available and self.experimental_mode and cp is not None and cp.brand == 'toyota' and
+        bool(cp.flags & ToyotaFlags.PRIUS_PEDAL) and
+        ui_state.has_longitudinal_control and self.params.get_bool("ConditionalExperimentalMode")):
+      text = tr("AUTO EXPERIMENTAL ARMED")
     text_x = rect.x + self.horizontal_padding
     text_y = rect.y + rect.height / 2 - 45 * FONT_SCALE // 2  # Center vertically
 
