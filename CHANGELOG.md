@@ -1,5 +1,12 @@
 # Changelog
 
+## Official lateral verification and repeated stops — 8 November 2026
+
+- Confirm the live Prius lateral parameters, EPS scaling and steering limits match official `release-tizi` 0.11.2 at `f7db927c728bab57bb1263e05465766a8f28fc9d`. All 2,400 synthetic steering frames match the official controller byte for byte.
+- Add a regression preserving the official steering parameters for both EPS-tuning branches and both SDSU formats. The Toyota suite now runs 28 tests.
+- Add full-runtime coverage of five consecutive stop/hold/restart/move cycles per SDSU format, without RES or driver-pedal input. All ten synthetic restarts passed on the comma without transmitting CAN.
+- [Record the evidence and physical-acceptance boundary](docs/PRIUS_LATERAL_VERIFICATION.md); the inspected post-install route had stationary operation only.
+
 ## Prius Pedal automatic-resume correction — 8 November 2026
 
 - Correct a reproduced stop-and-go deadlock: the planner requested movement, but Toyota's stock RES-button hold kept the longitudinal controller braking and prevented Pedal launch assist.

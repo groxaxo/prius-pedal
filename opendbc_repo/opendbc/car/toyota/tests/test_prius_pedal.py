@@ -6,7 +6,7 @@ from opendbc.can import CANPacker, CANParser
 from opendbc.car import structs
 from opendbc.car.toyota.interface import CarInterface
 from opendbc.car.toyota.toyotacan import create_prius_pedal_command, pedal_checksum
-from opendbc.car.toyota.values import CAR, ToyotaFlags, ToyotaSafetyFlags
+from opendbc.car.toyota.values import CAR, CarControllerParams, ToyotaFlags, ToyotaSafetyFlags
 
 PEDAL_DBC = 'toyota_prius_pedal_pt_generated'
 
@@ -115,6 +115,30 @@ class TestPriusPedal(unittest.TestCase):
         self.assertEqual(ci.CS.pcm_acc_status, pcm_state)
         self.assertTrue(state.standstill)
         self.assertEqual(state.cruiseState.standstill, pcm_state == 7 and not pedal)
+
+  def test_pedal_retains_official_prius_lateral_parameters(self):
+    # Frozen from official release-tizi 0.11.2, f7db927c728bab57bb1263e05465766a8f28fc9d.
+    # The EPS-specific delay/deadzone must survive both Pedal/SDSU configurations.
+    for eps, delay, deadzone in ((None, 0.12, 0.), (b'8965B47060' + bytes(6), 0.12, 0.),
+                                 (b'8965B47061' + bytes(6), 0.25, 0.2)):
+      firmware = [] if eps is None else [structs.CarParams.CarFw(ecu='eps', fwVersion=eps)]
+      for length in (4, 8):
+        cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: length}, 1: {}, 2: {}},
+                                     firmware, False, False, False)
+        with self.subTest(eps=eps, sdsu_length=length):
+          self.assertEqual(cp.lateralTuning.which(), 'torque')
+          self.assertEqual(str(cp.steerControlType), 'torque')
+          self.assertFalse(cp.steerAtStandstill)
+          for key, expected in {'minSteerSpeed': 0., 'steerRatio': 15.74,
+                                'steerActuatorDelay': delay, 'steerLimitTimer': 0.4}.items():
+            self.assertAlmostEqual(getattr(cp, key), expected, places=6)
+          for key, expected in {'latAccelFactor': 1.6, 'latAccelOffset': 0., 'friction': 0.151515,
+                                'steeringAngleDeadzoneDeg': deadzone}.items():
+            self.assertAlmostEqual(getattr(cp.lateralTuning.torque, key), expected, places=6)
+          limits = CarControllerParams(cp)
+          self.assertEqual({key: getattr(limits, key) for key in ('STEER_MAX', 'STEER_ERROR_MAX', 'STEER_DELTA_UP', 'STEER_DELTA_DOWN')},
+                           {'STEER_MAX': 1500, 'STEER_ERROR_MAX': 350, 'STEER_DELTA_UP': 15, 'STEER_DELTA_DOWN': 25})
+          self.assertEqual(cp.safetyConfigs[0].safetyParam & 0xFF, 66)
 
   def test_command_tracks_counter_and_checksum(self):
     packer = CANPacker(PEDAL_DBC)

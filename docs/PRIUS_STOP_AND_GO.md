@@ -2,6 +2,8 @@
 
 This follow-up addresses a reproduced manual-resume deadlock in the Prius/Pedal port. Software qualification, installation, parked verification and physical driving acceptance are separate steps. Publishing this change does not establish successful physical automatic restarts or traffic-light recognition.
 
+The subsequent [official-lateral and repeated-stop verification](PRIUS_LATERAL_VERIFICATION.md) confirms the owner's original official steering configuration and ten successful synthetic restarts across both SDSU formats. The updated post-install logs inspected contain stationary operation only, so physical restart acceptance remains outstanding.
+
 ## Installed and reboot-verified on 8 November 2026
 
 The target comma 3X received package `e307d68627e8c85f7ecba53cd62ab1f1181b2395`, containing correction `f69d3091fb3a32e4064dc6a5e25ac0cd33197761` and matching application `DEV-f69d3091-RELEASE`. [Package validation passed](https://github.com/groxaxo/prius-pedal/actions/runs/42438929607). The installer repeatedly verified fresh Park, zero speed and disengaged controls, saved recovery, retained all 24 native artifacts and the existing bootstub, and installed the matching application.

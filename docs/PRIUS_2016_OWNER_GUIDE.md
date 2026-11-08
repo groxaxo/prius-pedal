@@ -77,6 +77,7 @@ Message presence is a detection condition, not proof of correct wiring, device f
 | --- | --- |
 | Prius/Pedal source port | Implemented and covered by integration tests |
 | Toyota/CAN regression tests | Passed |
+| Official lateral configuration | Live parameters and 2,400 synthetic steering frames match the pinned official 0.11.2 release; [comparison and limits](PRIUS_LATERAL_VERIFICATION.md) |
 | Full safety suite and line coverage | Passed; workflow enforces 100% safety line coverage |
 | STM32H7 firmware build | Passed; matching application, development bootstub and source/hash manifest bundled in `main` |
 | Native application rebuild | Passed on the comma; 23 Toyota tests passed and 101 Prius safety tests ran with 8 inherited skips and no failures; packaged driving models retained |
