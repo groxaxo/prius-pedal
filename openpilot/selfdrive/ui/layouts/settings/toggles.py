@@ -1,4 +1,5 @@
 from openpilot.cereal import log
+from opendbc.car.toyota.values import ToyotaFlags
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
@@ -38,6 +39,7 @@ class TogglesLayout(Widget):
   def __init__(self):
     super().__init__()
     self._params = Params()
+    self._conditional_param_available = b"ConditionalExperimentalMode" in self._params.all_keys()
     self._is_release = self._params.get_bool("IsReleaseBranch")
 
     # param, title, desc, icon, needs_restart
@@ -51,6 +53,15 @@ class TogglesLayout(Widget):
       "ExperimentalMode": (
         lambda: tr("Experimental Mode"),
         "",
+        "experimental_white.png",
+        False,
+      ),
+      "ConditionalExperimentalMode": (
+        lambda: tr("Conditional Experimental Mode — Stops and Curves"),
+        tr_noop("With Experimental Mode enabled, use cruise and lead control for normal driving toward the set speed, " +
+                "and the driving model for detected stops and curves. The AUTO badge means this policy is armed; " +
+                "the Experimental icon shows when model control is active. Stop recognition remains experimental. " +
+                "Available on the supported Prius Pedal setup. Change this policy while disengaged."),
         "experimental_white.png",
         False,
       ),
@@ -108,7 +119,7 @@ class TogglesLayout(Widget):
       toggle = toggle_item(
         title,
         desc,
-        self._params.get_bool(param),
+        self._params.get_bool(param) if param != "ConditionalExperimentalMode" or self._conditional_param_available else False,
         callback=lambda state, p=param: self._toggle_callback(state, p),
         icon=icon,
       )
@@ -195,10 +206,15 @@ class TogglesLayout(Widget):
 
     self._update_experimental_mode_icon()
 
+    conditional_available = (self._conditional_param_available and ui_state.CP is not None and ui_state.CP.brand == 'toyota' and
+                             bool(ui_state.CP.flags & ToyotaFlags.PRIUS_PEDAL) and ui_state.has_longitudinal_control)
+    self._toggles["ConditionalExperimentalMode"].action_item.set_enabled(conditional_available and not ui_state.engaged)
+
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
     for param in self._toggle_defs:
-      self._toggles[param].action_item.set_state(self._params.get_bool(param))
+      value = self._params.get_bool(param) if param != "ConditionalExperimentalMode" or self._conditional_param_available else False
+      self._toggles[param].action_item.set_state(value)
 
     # these toggles need restart, block while engaged
     for toggle_def in self._toggle_defs:

@@ -11,6 +11,40 @@ permissions:
   contents: read
 
 jobs:
+  conditional-runtime:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            opendbc_repo
+            msgq_repo
+            openpilot/cereal
+            openpilot/common
+            openpilot/selfdrive/car
+            openpilot/selfdrive/controls
+            openpilot/selfdrive/locationd
+            openpilot/selfdrive/modeld/tests
+            openpilot/selfdrive/selfdrived
+            tools/prius_pedal
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install offline ARM runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libzmq5
+          python -m pip install -e 'opendbc_repo[testing]' pycapnp==2.1.0 pyzmq setproctitle zstandard casadi requests
+      - name: Actual planner and repeated stop-go chain without CAN I/O
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/opendbc_repo:${{ github.workspace }}/msgq_repo
+          LD_LIBRARY_PATH: ${{ github.workspace }}/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code
+        run: >-
+          python -m unittest tools.prius_pedal.test_stop_and_go
+          tools.prius_pedal.tests.test_repeated_stops
+          tools.prius_pedal.tests.test_conditional_stop_and_go
   test-and-build:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -22,6 +56,13 @@ jobs:
             opendbc_repo
             panda
             tools/prius_pedal
+            openpilot/common
+            openpilot/selfdrive/controls/lib
+            openpilot/selfdrive/controls/tests
+            openpilot/selfdrive/ui/onroad
+            openpilot/selfdrive/ui/layouts/settings
+            openpilot/selfdrive/ui/widgets
+            openpilot/selfdrive/selfdrived
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -31,6 +72,15 @@ jobs:
         run: >-
           ruff check opendbc_repo/opendbc/can/dbc.py opendbc_repo/opendbc/car/toyota
           opendbc_repo/opendbc/safety/tests/test_toyota_prius_pedal.py tools/prius_pedal
+          openpilot/selfdrive/controls/lib/conditional_experimental_mode.py
+          openpilot/selfdrive/controls/tests/test_conditional_experimental.py
+          openpilot/selfdrive/selfdrived/selfdrived.py openpilot/selfdrive/ui/onroad/exp_button.py
+          openpilot/selfdrive/ui/layouts/settings/toggles.py openpilot/selfdrive/ui/widgets/exp_mode_button.py
+      - name: Conditional mode and on-road switch regressions without CAN I/O
+        run: >-
+          python -m unittest openpilot.selfdrive.controls.tests.test_conditional_experimental
+          tools.prius_pedal.tests.test_experimental_button
+          tools.prius_pedal.tests.test_conditional_host
       - name: Verify bundled firmware and source compatibility
         run: python tools/prius_pedal/verify_firmware.py
       - name: Toyota integration and CAN regression tests

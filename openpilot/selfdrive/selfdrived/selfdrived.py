@@ -7,6 +7,7 @@ import openpilot.cereal.messaging as messaging
 
 from openpilot.cereal import log
 from opendbc.car.structs import car
+from opendbc.car.toyota.values import ToyotaFlags
 from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcClient
 
@@ -17,6 +18,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
 
 from openpilot.selfdrive.car.car_events import CarEvents
+from openpilot.selfdrive.controls.lib.conditional_experimental_mode import ConditionalExperimentalMode
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.helpers import ExcessiveActuationCheck
@@ -126,6 +128,13 @@ class SelfdriveD:
     self.logged_comm_issue = None
     self.not_running_prev = None
     self.experimental_mode = False
+    self.experimental_mode_requested = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+    self.conditional_param_available = b"ConditionalExperimentalMode" in self.params.all_keys()
+    self.conditional_experimental_requested = self.conditional_param_available and self.params.get_bool("ConditionalExperimentalMode")
+    self.conditional_experimental_available = (self.CP.brand == 'toyota' and bool(self.CP.flags & ToyotaFlags.PRIUS_PEDAL) and
+                                               self.CP.openpilotLongitudinalControl)
+    self.conditional_experimental = ConditionalExperimentalMode()
+    self.experimental_mode_status = None
     self.personality = self.params.get("LongitudinalPersonality", return_default=True)
     self.recalibrating_seen = False
     self.dm_lockout_set = False
@@ -559,18 +568,35 @@ class SelfdriveD:
     self.update_events(CS)
     if not self.CP.passive and self.initialized:
       self.enabled, self.active = self.state_machine.update(self.events)
+    self.update_experimental_mode(CS)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)
 
     self.CS_prev = CS
 
+  def update_experimental_mode(self, CS):
+    conditional = self.conditional_experimental_requested and self.conditional_experimental_available
+    services = ['modelV2', 'radarState', 'controlsState', 'vehicleParameters']
+    self.experimental_mode = self.conditional_experimental.update(
+      requested=self.experimental_mode_requested, conditional=conditional, enabled=self.enabled,
+      valid=CS.canValid and self.sm.all_checks(services), model_time=self.sm.logMonoTime['modelV2'],
+      model_age=time.monotonic() - self.sm.recv_time['modelV2'], car_state=CS, model=self.sm['modelV2'],
+      lead=self.sm['radarState'].leadOne, curvature=self.sm['controlsState'].curvature, roll=self.sm['vehicleParameters'].roll)
+    status = (conditional, self.experimental_mode, self.conditional_experimental.reason)
+    if status != self.experimental_mode_status:
+      cloudlog.event('conditional_experimental_mode', armed=bool(conditional and self.experimental_mode_requested),
+                     active=bool(self.experimental_mode), reason=self.conditional_experimental.reason,
+                     modelMonoTime=self.sm.logMonoTime['modelV2'])
+      self.experimental_mode_status = status
+
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
       self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.experimental_mode_requested = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.conditional_experimental_requested = self.conditional_param_available and self.params.get_bool("ConditionalExperimentalMode")
       self.personality = self.params.get("LongitudinalPersonality", return_default=True)
       time.sleep(0.1)
 

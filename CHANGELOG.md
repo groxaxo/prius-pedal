@@ -1,5 +1,12 @@
 # Changelog
 
+## Conditional Experimental Mode for stops and curves — 8 November 2026
+
+- Adapt pinned FrogPilot stop detection, lead relevance and curve geometry to the official 0.11.2 base. Use cruise/lead planning outside detected stops and curves, addressing the model-limited under-speed without increasing acceleration gains or changing Toyota's speed mapping.
+- Separate the saved Experimental master from the effective planning mode, process each model frame once, and log transition reasons. Add an explicit conditional setting and AUTO badge; fix the on-road button to toggle the saved request while cruise is selected.
+- Release a cached standstill stop after two distinct valid movement predictions instead of waiting for the approach filter to decay. Retain current lead-stop arbitration, the RES-deadlock correction, bounded 0.12 Pedal force, driver overrides and official lateral parameters.
+- Add selector/host/button regressions, native ARM offline planner/stop-go CI, source-first compatibility with the older native parameter library, and [deployment and acceptance documentation](docs/PRIUS_CONDITIONAL_EXPERIMENTAL.md). Enabling the feature requires a native parameter rebuild and parked verification; a Git merge does not install it.
+
 ## Official lateral verification and repeated stops — 8 November 2026
 
 - Confirm the live Prius lateral parameters, EPS scaling and steering limits match official `release-tizi` 0.11.2 at `f7db927c728bab57bb1263e05465766a8f28fc9d`. All 2,400 synthetic steering frames match the official controller byte for byte.
