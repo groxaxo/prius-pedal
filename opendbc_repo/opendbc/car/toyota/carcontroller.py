@@ -34,7 +34,9 @@ MAX_USER_TORQUE = 500
 
 
 def get_long_tune(CP, params):
-  if CP.flags & ToyotaFlags.TSS2:
+  # FrogPilot uses this gentler acceleration correction for its Prius/Pedal
+  # path too. The legacy TSS-P gain amplifies small acceleration fluctuations.
+  if CP.flags & (ToyotaFlags.TSS2 | ToyotaFlags.PRIUS_PEDAL):
     kiBP = [2., 5.]
     kiV = [0.5, 0.25]
   else:

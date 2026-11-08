@@ -1,4 +1,5 @@
 import itertools
+import math
 import unittest
 
 from opendbc.can import CANPacker, CANParser
@@ -112,6 +113,31 @@ class TestPriusPedal(unittest.TestCase):
     for t in range(3, 10):
       parser.update([[t * 1_000_000, [good]]])
     self.assertFalse(parser.can_valid)
+
+  def test_acceleration_feedback_does_not_amplify_small_oscillations(self):
+    # Reproduce hunting seen at a steady cruise: small wheel-acceleration
+    # fluctuations must not produce much larger alternating ACC commands.
+    for sdsu_length in (4, 8):
+      cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, {0: {0x201: 6, 0x2FF: sdsu_length}, 1: {}, 2: {}}, [], False, False, False)
+      ci = CarInterface(cp)
+      controller = ci.CarController({bus: parser.dbc_name for bus, parser in ci.can_parsers.items()}, cp)
+      cs = ci.CS
+      cs.pedal_ready = True
+      cs.pcm_acc_status = 8
+      cc = structs.CarControl(enabled=True, longActive=True)
+      cc.actuators.accel = 0.05
+      cc.actuators.longControlState = 'pid'
+      commands = []
+      for frame in range(2000):
+        acceleration = cc.actuators.accel + 0.1 * math.sin(2 * math.pi * 0.2 * frame * 0.01)
+        cs.out = structs.CarState(canValid=True, vEgo=14., vEgoRaw=14., aEgo=acceleration,
+                                 gearShifter='drive').as_reader()
+        _, sends = controller.update(cc.as_reader(), cs, frame * 10_000_000)
+        commands.extend(int.from_bytes(data[:2], 'big', signed=True) / 1000
+                        for addr, data, _ in sends if addr == 0x343 and frame >= 1000)
+      with self.subTest(sdsu_length=sdsu_length):
+        self.assertLess(max(commands) - min(commands), 0.10)
+        self.assertLess(max(abs(b - a) for a, b in itertools.pairwise(commands)), 0.025)
 
   def test_controller_only_assists_an_eligible_start(self):
     cp = prius_params()

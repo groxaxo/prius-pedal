@@ -1,5 +1,12 @@
 # Changelog
 
+## Prius acceleration feedback correction — 8 November 2026
+
+- Use FrogPilot's gentler acceleration-feedback gain for the Prius/Pedal path. The base release's legacy non-TSS2 Toyota gain produced oversized corrections around small acceleration fluctuations in recorded-input replay.
+- Preserve direct acceleration feedforward, command bounds, driver overrides, device checks and the existing tuning for other Toyota configurations.
+- Add a feedback-oscillation regression covering both four-byte and eight-byte SDSU selection. Explain Experimental Mode's speed ceiling and Toyota's separate internal/displayed cruise targets; this correction does not force acceleration past model or lead constraints.
+- Replay results qualify command behavior only. The subjective reduction in jerking and closed-loop vehicle response require follow-up physical acceptance.
+
 ## FrogPilot four-byte SDSU compatibility — 8 November 2026
 
 - Restore openpilot longitudinal selection for the TSS-P Prius with a six-byte Pedal and four-byte Smart DSU, making Experimental Mode available again.
