@@ -2,6 +2,16 @@
 
 This follow-up addresses a reproduced manual-resume deadlock in the Prius/Pedal port. Software qualification, installation, parked verification and physical driving acceptance are separate steps. Publishing this change does not establish successful physical automatic restarts or traffic-light recognition.
 
+## Installed and reboot-verified on 8 November 2026
+
+The target comma 3X received package `e307d68627e8c85f7ecba53cd62ab1f1181b2395`, containing correction `f69d3091fb3a32e4064dc6a5e25ac0cd33197761` and matching application `DEV-f69d3091-RELEASE`. [Package validation passed](https://github.com/groxaxo/prius-pedal/actions/runs/42438929607). The installer repeatedly verified fresh Park, zero speed and disengaged controls, saved recovery, retained all 24 native artifacts and the existing bootstub, and installed the matching application.
+
+A normal reboot changed the boot ID. At 49.39 seconds of Linux uptime, all observed vehicle/control/Panda services were alive and valid, CAN was valid, the car was in Park at zero speed, controls were disengaged, no nonzero commands were observed, and no ACC/Panda fault, heartbeat loss, invalid RX check or SPI error was present. The running firmware signature matched the bundled image, the updated state parser matched the package, and all 24 native artifact hashes were preserved. The full-runtime stop-and-go regression also passed against the rebooted installed source, using synthetic inputs without transmitting CAN.
+
+The installed configuration retains openpilot longitudinal control, `autoResumeSng=true` and the FrogPilot acceleration-feedback gain. Assistance is enabled and accelerator input can override speed without disengaging normal lane centering (`DisengageOnAccelerator=false`). Physical automatic restart, ride comfort and traffic-light recognition remain outstanding acceptance checks.
+
+The owner's saved Experimental Mode preference was off at installation and was preserved. This deployment does not add Conditional Experimental Mode or steering with cruise disengaged. Those are separate requested features, described below; neither is represented as activated by the stop-and-go correction.
+
 ## Recorded failure and correction
 
 A drive recorded on `52a0ea2` showed the lead moving away while the Prius remained stopped. The planner had released its stop request and requested **+0.452 m/s²**, but the longitudinal controller remained in `stopping` and requested **−1.688 m/s²**. Toyota's PCM still reported its stock RES-button hold, the screen displayed `resumeRequired`, and no Pedal launch command was active. The driver subsequently used the accelerator.
@@ -28,6 +38,12 @@ Calibration was valid and model frame-drop percentage was zero in the inspected 
 Experimental Mode uses the set speed as a ceiling and may choose a lower speed for the scene. It may attempt stops and restarts at traffic lights, but recognition and timing remain experimental. The stop-and-go correction allows a restart **when the planner releases the stop**; it cannot guarantee recognition of every red or green light. The driver must supervise and intervene when needed. See [comma's Experimental Mode explanation](https://blog.comma.ai/090release/#experimental-mode).
 
 The reported low chosen speed remains a model-behavior limitation; this patch does not claim to solve it. Changing that policy requires a separate reviewed planner/model change and physical acceptance, not a hidden acceleration override.
+
+## Requested FrogPilot features beyond this correction
+
+FrogPilot's [Conditional Experimental Mode](https://github.com/FrogAi/FrogPilot/blob/a22c476734514e36b196168cd39743b74f30dc01/frogpilot/controls/lib/conditional_experimental_mode.py) returns to ACC/set-speed planning when its configured scene conditions do not apply. Its acceleration profiles alone raise ceilings; they do not increase a low model-selected acceleration. Porting conditional selection requires stateful stop detection, hysteresis and standstill-release handling, valid model trajectories, a clear mode choice and replay/regression qualification. This fork currently retains full Experimental planning when its existing Experimental switch is on.
+
+Normal lane centering is already continuous while controls are active, subject to steering faults and vehicle limits. Independent lane centering after ACC disengagement or driver braking is FrogPilot's Always On Lateral feature. Its [host state](https://github.com/FrogAi/FrogPilot/blob/a22c476734514e36b196168cd39743b74f30dc01/frogpilot/controls/frogpilot_card.py) includes deliberate activation, gear/calibration/driver-monitoring checks, and visible status. Its [paired safety implementation](https://github.com/FrogAi/FrogPilot/blob/b5c24be2ff6fa2aee5b058d3131382a0e8395309/opendbc_repo/opendbc/safety/lateral.h) uses separate lateral permission while retaining steering limits. This fork has no equivalent feature or saved setting to activate. A complete port must preserve longitudinal cancellation and steering shutdown conditions; forcing the host's lateral-active bit would not supply Panda permission or those safeguards.
 
 ## Regression checks
 

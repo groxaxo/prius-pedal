@@ -80,7 +80,7 @@ Message presence is a detection condition, not proof of correct wiring, device f
 | Full safety suite and line coverage | Passed; workflow enforces 100% safety line coverage |
 | STM32H7 firmware build | Passed; matching application, development bootstub and source/hash manifest bundled in `main` |
 | Native application rebuild | Passed on the comma; 23 Toyota tests passed and 101 Prius safety tests ran with 8 inherited skips and no failures; packaged driving models retained |
-| Firmware startup on the target device | `DEV-42bec01b-RELEASE` matched the bundle after reboot on 8 November; [current record](PRIUS_PARKED_VERIFICATION.md) |
+| Firmware startup on the target device | `DEV-f69d3091-RELEASE` matched the stop-and-go package after reboot on 8 November; [deployment record](PRIUS_STOP_AND_GO.md#installed-and-reboot-verified-on-8-november-2026) |
 | Home banner and durable owner SSH | Physical banner confirmed; fresh login passed after GitHub-key refresh and reboot; [verification record](DEVICE_VERIFICATION.md) |
 | Saved update/upload preferences | Automatic updates disabled and Firehose inactive after the rebuild and reboot; [scope and settings](DEVICE_VERIFICATION.md#observed-results) |
 | Recorded vehicle-CAN replay | Pending |

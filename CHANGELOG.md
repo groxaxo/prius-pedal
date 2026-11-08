@@ -6,6 +6,7 @@
 - Follow FrogPilot's gas-interceptor behavior by normalizing the manual-resume requirement only for the supported Prius/Pedal path. Preserve physical wheel standstill, raw PCM state, planner stop requests, driver overrides and hardware/safety checks.
 - Add CAN-parser and full-runtime regressions for hold, release without RES, launch assist, movement, braking and disengagement. Document the separate model-commanded low speed and the limits of experimental traffic-light behavior in [the follow-up record](docs/PRIUS_STOP_AND_GO.md).
 - Keep physical automatic-restart and traffic-light acceptance outstanding; source tests and a published package do not establish road behavior.
+- Install the matching package on the parked comma 3X, preserve recovery and 24 native artifacts, and verify firmware signature, healthy CAN/Panda state, inactive parked commands and the installed offline integration test after a normal reboot. Document Conditional Experimental Mode and Always On Lateral as additional requested features rather than claiming this correction enables them.
 
 ## Prius acceleration feedback correction — 8 November 2026
 
