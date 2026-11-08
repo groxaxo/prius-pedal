@@ -99,6 +99,42 @@ class TestConditionalStopAndGo(unittest.TestCase):
           self.assertLessEqual(control.update(True, state, planner.output_a_target, planner.output_should_stop, (-3.5, 1.5)), 0.)
           self.assertEqual(control.long_control_state, LongCtrlState.stopping)
 
+  def test_actual_planner_recovers_cruise_request_outside_stop_and_curve(self):
+    # Synthetic steady road matching the diagnosed speed/request relationship;
+    # no private route, images, identifying data or raw log fixture is published.
+    for length in (4, 8):
+      with self.subTest(sdsu_length=length):
+        cp, ci, state, sm, _, _, _ = self.make_chain(length)
+        state.vEgo = state.vEgoRaw = 23.3526
+        state.vCruise, state.vCruiseCluster = 105., 111.
+        state.standstill = False
+        sm['controlsState'].longControlState = 'pid'
+        sample = model(speed=23.3526, accel=.0012445)
+        md = sm['modelV2']
+        md.velocity.t, md.velocity.x = sample.velocity.t, sample.velocity.x
+        md.position.x, md.position.y = sample.position.x, sample.position.y
+        md.orientationRate.z = sample.orientationRate.z
+        md.action.shouldStop, md.action.desiredAcceleration = False, .0012445
+        lead = sm['radarState'].leadOne
+        lead.present, lead.dRel, lead.vLead, lead.vRel = True, 107., 26.2, 2.8474
+        lead.aLeadK, lead.aLeadTau = -.25, 1.5
+        results = {}
+        for conditional in (False, True):
+          selector = ConditionalExperimentalMode()
+          planner = LongitudinalPlanner(cp, init_v=state.vEgo)
+          for frame in range(60):
+            sm['selfdriveState'].experimentalMode = selector.update(
+              requested=True, conditional=conditional, enabled=True, valid=True,
+              model_time=(frame + 1) * 50_000_000, model_age=0., car_state=state, model=md,
+              lead=lead, curvature=0., roll=0.)
+            planner.update(sm)
+          results[conditional] = planner.output_a_target
+          self.assertFalse(planner.output_should_stop)
+          self.assertEqual(state.vCruise, 105.)
+          self.assertEqual(state.vCruiseCluster, 111.)
+        self.assertAlmostEqual(results[False], .0012445, places=5)
+        self.assertGreater(results[True], .7)
+
 
 if __name__ == '__main__':
   unittest.main()
