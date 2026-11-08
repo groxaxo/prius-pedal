@@ -39,6 +39,8 @@ The software base is **openpilot 0.11.2** at official commit `f7db927c728bab57bb
 
 ## What the Pedal behavior does
 
+The [automatic-resume correction](PRIUS_STOP_AND_GO.md) removes an incorrectly retained RES-button requirement on this hardware path. Once engaged, the intended behavior is to hold while the planner requests a stop and restart when the planner requests movement, subject to the existing driver and hardware checks. Software tests cover this transition; physical acceptance remains pending. Experimental Mode may still choose a speed below the setting, and reliable red/green-light recognition is not established by this correction.
+
 With the feature enabled, the controller checks that the car is stationary, the gear is Drive, longitudinal control is active, the acceleration request is positive and finite, and both devices and CAN data are healthy. It then permits the fixed launch-assist command used by FrogPilot for this Prius platform.
 
 The assist stops when the car moves, the driver presses either pedal, cruise is cancelled, or the control/device checks fail. Ongoing acceleration and braking continue through Toyota's existing ACC command path and its limits.

@@ -43,6 +43,8 @@ Both the **four-byte Smart DSU status at 50 Hz** and the legacy eight-byte forma
 
 ## A little help when moving off
 
+The latest [stop-and-go correction](docs/PRIUS_STOP_AND_GO.md) addresses a reproduced case where the planner requested movement but the stock RES-button state kept this port braking. The supported Prius/Pedal path now allows the planner to release that hold. Physical restart acceptance and experimental traffic-light recognition remain separate from software verification.
+
 The port adapts FrogPilot's Prius-specific Pedal behavior to the official software base:
 
 - **Launch assist from standstill.** A fixed Pedal command is available when longitudinal control is active and the planner requests positive acceleration. Assist ends when the vehicle moves.

@@ -93,6 +93,29 @@ class TestPriusPedal(unittest.TestCase):
       cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, fp, [], True, False, False)
       self.assertFalse(cp.openpilotLongitudinalControl)
 
+  def test_pedal_stop_is_not_a_manual_resume_requirement(self):
+    # PCM state 7 is a stock RES-button hold. With the supported Pedal/SDSU,
+    # wheel standstill remains true but must not latch LongControl in stopping.
+    for pedal, sdsu_length, pcm_state in itertools.product((False, True), (4, 8), (0, 7, 8)):
+      fingerprint = {0: {0x2FF: sdsu_length}, 1: {}, 2: {}}
+      if pedal:
+        fingerprint[0][0x201] = 6
+      cp = CarInterface.get_params(CAR.TOYOTA_PRIUS, fingerprint, [], False, False, False)
+      ci = CarInterface(cp)
+      ci.CS.update(ci.can_parsers)
+      for parser in ci.can_parsers.values():
+        packer = CANPacker(parser.dbc_name)
+        values = {'PCM_CRUISE': {'CRUISE_STATE': pcm_state},
+                  'WHEEL_SPEEDS': {f'WHEEL_SPEED_{wheel}': 0 for wheel in ('FL', 'FR', 'RL', 'RR')}}
+        frames = [packer.make_can_msg(message.name, parser.bus, values.get(message.name, {}))
+                  for message in list(parser.message_states.values())]
+        parser.update([[1_000_000_000, frames]])
+      state = ci.CS.update(ci.can_parsers)
+      with self.subTest(pedal=pedal, sdsu_length=sdsu_length, pcm_state=pcm_state):
+        self.assertEqual(ci.CS.pcm_acc_status, pcm_state)
+        self.assertTrue(state.standstill)
+        self.assertEqual(state.cruiseState.standstill, pcm_state == 7 and not pedal)
+
   def test_command_tracks_counter_and_checksum(self):
     packer = CANPacker(PEDAL_DBC)
     for active, counter in itertools.product((False, True), range(32)):

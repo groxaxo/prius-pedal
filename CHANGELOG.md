@@ -1,5 +1,12 @@
 # Changelog
 
+## Prius Pedal automatic-resume correction — 8 November 2026
+
+- Correct a reproduced stop-and-go deadlock: the planner requested movement, but Toyota's stock RES-button hold kept the longitudinal controller braking and prevented Pedal launch assist.
+- Follow FrogPilot's gas-interceptor behavior by normalizing the manual-resume requirement only for the supported Prius/Pedal path. Preserve physical wheel standstill, raw PCM state, planner stop requests, driver overrides and hardware/safety checks.
+- Add CAN-parser and full-runtime regressions for hold, release without RES, launch assist, movement, braking and disengagement. Document the separate model-commanded low speed and the limits of experimental traffic-light behavior in [the follow-up record](docs/PRIUS_STOP_AND_GO.md).
+- Keep physical automatic-restart and traffic-light acceptance outstanding; source tests and a published package do not establish road behavior.
+
 ## Prius acceleration feedback correction — 8 November 2026
 
 - Use FrogPilot's gentler acceleration-feedback gain for the Prius/Pedal path. The base release's legacy non-TSS2 Toyota gain produced oversized corrections around small acceleration fluctuations in recorded-input replay.

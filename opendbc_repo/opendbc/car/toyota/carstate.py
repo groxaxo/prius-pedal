@@ -179,7 +179,10 @@ class CarState(CarStateBase):
 
     pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
     self.pcm_acc_status = pcm_acc_status
-    ret.cruiseState.standstill = pcm_acc_status == 7
+    # FrogPilot lets the planner release the stock RES-button hold when a Pedal
+    # is fitted. Normalize that manual-resume requirement here for this port's
+    # supported Prius/Pedal path; preserve wheel standstill and raw PCM status.
+    ret.cruiseState.standstill = pcm_acc_status == 7 and not (self.CP.flags & ToyotaFlags.PRIUS_PEDAL)
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
     ret.cruiseState.nonAdaptive = pcm_acc_status in (1, 2, 3, 4, 5, 6)
 
